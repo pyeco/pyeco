@@ -26,14 +26,14 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+#
 from twisted.internet.protocol import Protocol, ServerFactory
 #from twisted.internet import reactor
 import os
 import socket
 import sys
 import rijndael
-	
+
 class Factory_Map(ServerFactory):
 	def __init__(self, serverobj):
 		with serverobj.lock_print:
@@ -42,12 +42,11 @@ class Factory_Map(ServerFactory):
 	def buildProtocol(self, addr):
 		print "[ map ]", "new client accepted"
 		return Socket_Map(self.serverobj)
-		
+
 class Socket_Map(Protocol):
 	def __init__(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		#self.thread_recv = {}
 		self.packethandle_map = {}
 		self.serverobj.clientlistcount_map += 1
 		self.clientindex = int(self.serverobj.clientlistcount_map)
@@ -62,7 +61,7 @@ class Socket_Map(Protocol):
 		self.ecorecvkey = False
 		self.encode = self.cryptio.encode
 		self.decode = self.cryptio.decode
-		
+	
 	def dataReceived(self, data):
 		self.buffer += data.encode("hex")
 		#print self.ecoinit,self.ecorecvkey,self.buffer
@@ -117,7 +116,7 @@ class Socket_Map(Protocol):
 	def connectionMade(self):
 		self.transport.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 		print "[ map ]","client connected"#,self
-		
+	
 	def connectionLost(self, reason):
 		self.transport.loseConnection()
 		#print self.serverobj.clientlist_map
@@ -126,7 +125,7 @@ class Socket_Map(Protocol):
 		del self.serverobj.clientlist_map[self.clientindex]
 		del self.serverobj.packethandle_map[self.clientindex]
 		print "[ map ]","client disconnected"
-		
+	
 	def exitpc(self, pc):
 		#only set on logout
 		pc.mapclient = None
@@ -147,9 +146,6 @@ class Socket_Map(Protocol):
 		pc.attacking = False
 		pc.attacking_target = None
 		pc.attacking_delay = 0
-		
+	
 from Handle.packethandle_map import PacketHandle_Map
 from Object.pcobj import PC
-	
-	
-	

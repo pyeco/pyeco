@@ -26,14 +26,14 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+
 from twisted.internet.protocol import Protocol,ServerFactory
 from twisted.internet import task#,reactor
 import os
 import socket
 import sys
 import rijndael
-	
+
 class Factory(ServerFactory):
 	def __init__(self, serverobj):
 		with serverobj.lock_print:
@@ -42,12 +42,11 @@ class Factory(ServerFactory):
 	def buildProtocol(self, addr):
 		print "[login]", "new client accepted"
 		return Socket(self.serverobj)
-		
+
 class Socket(Protocol):
 	def __init__(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		#self.thread_recv = {}
 		self.packethandle = {}
 		self.waitmapserverrequest = False
 		self.serverobj.clientlistcount += 1
@@ -64,7 +63,7 @@ class Socket(Protocol):
 		self.ecorecvkey = False
 		self.encode = self.cryptio.encode
 		self.decode = self.cryptio.decode
-		
+	
 	def dataReceived(self, data):
 		self.buffer += data.encode("hex")
 		#print self.ecoinit,self.ecorecvkey,self.buffer
@@ -161,9 +160,11 @@ class Socket(Protocol):
 		#save pc data
 		if pc.name != None:
 			pc.saveallconfig(pc, "UserDB/"+str(pc.account)+".ini")
-	
+
 from Handle.packethandle import PacketHandle
 from Object.pcobj import PC
+
+
 
 
 

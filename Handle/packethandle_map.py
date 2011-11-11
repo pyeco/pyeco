@@ -399,10 +399,10 @@ class PacketHandle_Map:
 				if p.charid != pc.charid and p.map == pc.map:
 					#print "send 120c"
 					#他キャラ情報→自キャラ
-					datatype,datacontent = self.createpacket.create120c(p)
+					datatype, datacontent = self.createpacket.create120c(p)
 					self.send(datatype, datacontent, pc.mapclient, None)
 					#自キャラ情報→他キャラ
-					datatype,datacontent = self.createpacket.create120c(pc)
+					datatype, datacontent = self.createpacket.create120c(pc)
 					self.send(datatype, datacontent, p.mapclient, None)
 		#モンスター情報
 		for m in self.moblist.itervalues(): # in self.moblist.keys()
@@ -418,14 +418,14 @@ class PacketHandle_Map:
 	
 	def do_020d(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""キャラクタ情報要求"""
-		requestid = str(int(recvcontent[0:8],16))
+		requestid = int(recvcontent[0:8],16)
 		print "[ map ]", "request other character detail",requestid
 		for p in self.pclist.itervalues():
 			if p.online and p.charid == requestid:
 				#キャラ情報
 				#print "send 020e"
-				datatype,datacontent = self.createpacket.create020e(p)
-				self.send(datatype,datacontent,pc.mapclient,None)
+				datatype, datacontent = self.createpacket.create020e(p)
+				self.send(datatype, datacontent, pc.mapclient, None)
 				#datatype,datacontent = self.createpacket.create121c(p, p.motion, "1")
 				#self.send(datatype,datacontent,pc.mapclient,None)
 	
@@ -484,7 +484,7 @@ class PacketHandle_Map:
 			return
 		print "[ map ]", "[open chat]",openchattextsysenc
 		#オープンチャット・システムメッセージ
-		datatype,datacontent = self.createpacket.create03e9(openchattext,pc.charid)
+		datatype, datacontent = self.createpacket.create03e9(openchattext,pc.charid)
 		self.sendmap(datatype, datacontent, self.pclist, pc, None)
 	
 	def do_121b(self, pc, data, datalength, recvhead, recvtype, recvcontent):

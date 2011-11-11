@@ -26,20 +26,15 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+
 import sys
 import os
 import copy
 import time
 from mobobj import Mob
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
+import traceback
+exceptinfo = traceback.format_exc
+
 class Event:
 	def __init__(self):
 		self.id = None
@@ -62,7 +57,7 @@ class Event:
 		self.createpacket = None
 		self.serverobj = None
 		self.eventhandle = None
-	
+
 def say(pc, text, npc_name="", motion_id=131, npcid=None):
 	"""npc say"""
 	if not npcid:
@@ -81,7 +76,7 @@ def say(pc, text, npc_name="", motion_id=131, npcid=None):
 	#NPCメッセージのフッター
 	datatype,datacontent = pc.e.createpacket.create03f9()
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def warp(pc, mapid, x, y):
 	"""warp"""
 	mapid = str(mapid)
@@ -128,7 +123,7 @@ def warp(pc, mapid, x, y):
 	rawx,rawy = str(rawx),str(rawy)
 	rawx,rawy = rawx.replace(".0",""),rawy.replace(".0","")
 	warpraw(pc, mapid, rawx, rawy, x, y)
-	
+
 def warpraw(pc, mapid, rawx, rawy, x=None, y=None):
 	"""warp raw"""
 	mapid = int(mapid)
@@ -180,7 +175,7 @@ def warpraw(pc, mapid, rawx, rawy, x=None, y=None):
 		#モンスター関連（MonsterID通知？）
 		datatype,datacontent = pc.e.createpacket.create122a()
 		pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 	"""give item"""
 	try:
@@ -273,7 +268,7 @@ def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 		systemmessage(pc, "%sを%s個預かりました"%(item.Name, printcount))
 	returnitem = copy.copy(item)
 	return returnitem
-	
+
 def takeitem(pc, itemid, count=1):
 	"""take item"""
 	itemlist = pc.sort.item
@@ -318,7 +313,7 @@ def takeitem(pc, itemid, count=1):
 			return returnitem
 	print "[event]", "takeitem id not found", itemid
 	return None
-	
+
 def takeitembyiid(pc, iid, count=1, fromwarehouse=False):
 	"""take item by iid"""
 	if not fromwarehouse:
@@ -372,7 +367,7 @@ def takeitembyiid(pc, iid, count=1, fromwarehouse=False):
 			return returnitem
 	print "[event]", "takeitem iid not found", iid
 	return None
-	
+
 def countitem(pc, itemid):
 	"""count item"""
 	itemid = int(itemid)
@@ -388,7 +383,7 @@ def countitem(pc, itemid):
 		if pc.item[x].Id == itemid:
 			returncount += int(pc.item[x].Count)
 	return returncount
-	
+
 def select(pc, optionlist, title=""):
 	"""select window"""
 	while True:
@@ -411,7 +406,7 @@ def select(pc, optionlist, title=""):
 	selectresult = int(pc.selectresult)
 	pc.selectresult = None
 	return selectresult
-	
+
 def motion(pc, motionid, isloop=0):
 	"""motion"""
 	isloop = int(isloop)
@@ -421,21 +416,21 @@ def motion(pc, motionid, isloop=0):
 		isloop = 1
 	datatype,datacontent = pc.e.createpacket.create121c(pc, motionid, isloop)
 	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-	
+
 def systemmessage(pc, message, fast=False):
 	"""system message"""
 	datatype,datacontent = pc.e.createpacket.create03e9(message, -1)
 	pc.e.send(datatype, datacontent, pc.mapclient, None, fast)
-	
+
 def servermessage(pc, message, fast=False):
 	"""server message"""
 	datatype,datacontent = pc.e.createpacket.create03e9(message, 0)
 	pc.e.sendserver(datatype, datacontent, pc.e.pclist, pc, None, fast)
-	
+
 def getgold(pc):
 	"""get gold num"""
 	return pc.gold
-	
+
 def givegold(pc, goldgive):
 	"""give gold"""
 	pc.gold = int(pc.gold) + int(goldgive)
@@ -446,7 +441,7 @@ def givegold(pc, goldgive):
 	datatype,datacontent = pc.e.createpacket.create09ec(pc)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
 	return returntype
-	
+
 def takegold(pc, goldtake):
 	"""take gold"""
 	if int(pc.gold) < int(goldtake):
@@ -457,7 +452,7 @@ def takegold(pc, goldtake):
 	datatype,datacontent = pc.e.createpacket.create09ec(pc)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
 	return True
-	
+
 def updategold(pc, gold=None):
 	"""update gold view"""
 	if gold == None:
@@ -466,14 +461,14 @@ def updategold(pc, gold=None):
 		pc.gold = int(gold)
 	datatype,datacontent = pc.e.createpacket.create09ec(pc)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def createitem(pc, itemid):
 	"""create item
 	return Object.itemobj.Item"""
 	itemid = int(itemid)
 	item = pc.e.itemobj.createitem(pc.e.itemdic, itemid)
 	return item
-	
+
 def npcshop(pc, shopid):
 	"""npc shop"""
 	shopid = int(shopid)
@@ -483,7 +478,7 @@ def npcshop(pc, shopid):
 		return
 	datatype,datacontent = pc.e.createpacket.create0613(pc, itemidlist)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def updateitemwindow(pc):
 	"""update item window"""
 	itemlist = pc.sort.item
@@ -499,7 +494,7 @@ def updateitemwindow(pc):
 		#アイテム個数変化
 		datatype,datacontent = pc.e.createpacket.create09cf(stockid, newcount)
 		pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def npctrade(pc):
 	"""npc trade / for trash or quest"""
 	pc.isnpctrade = True
@@ -522,29 +517,29 @@ def npctrade(pc):
 		return ()
 	updateitemwindow(pc)
 	return pc.tradereturnlist
-	
+
 def npcmotion(pc, motionid, npcid=None):
 	"""npc motion"""
 	if not npcid:
 		npcid = pc.e.id
 	datatype,datacontent = pc.e.createpacket.create121c(pc, motionid, 0, npcid)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def wait(pc, time_ms):
 	"""let client wait"""
 	datatype,datacontent = pc.e.createpacket.create05eb(time_ms)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def npcsell(pc):
 	"""npc sell window"""
 	datatype,datacontent = pc.e.createpacket.create0615(pc)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def updatepc(pc):
 	"""update pc information"""
 	datatype,datacontent = pc.e.createpacket.create020e(pc)
 	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-	
+
 def warehouse(pc, warehouse_id):
 	"""warehouse window"""
 	warehouse_id = int(warehouse_id)
@@ -567,17 +562,17 @@ def warehouse(pc, warehouse_id):
 	pc.warehouse_open = warehouse_id
 	datatype,datacontent = pc.e.createpacket.create09fa()
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def playbgm(pc, sound_id, loop=1, volume=100):
 	"""play bgm / bgm_xxx.wma"""
 	datatype,datacontent = pc.e.createpacket.create05f0(sound_id, loop, volume)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def playse(pc, sound_id, loop=0, volume=100, balance=50):
 	"""play se / se_xxx.wav"""
 	datatype,datacontent = pc.e.createpacket.create05f5(sound_id, loop, volume, balance)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
-	
+
 def playjin(pc, sound_id, loop=0, volume=100, balance=50):
 	"""play jin / jin_xxx.wav"""
 	datatype,datacontent = pc.e.createpacket.create05fa(sound_id, loop, volume, balance)
@@ -587,13 +582,13 @@ def effect(pc, effect_id=0):
 	"""effect show"""
 	datatype,datacontent = pc.e.createpacket.create060e(pc, effect_id)
 	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-	
+
 def speed(pc, speed=410):
 	"""move speed change"""
 	pc.status.speed = int(speed)
 	datatype,datacontent = pc.e.createpacket.create1239(pc, pc.status.speed)
 	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-	
+
 def mobmove(mob, x, y, pclist, mapdic, netio, createpacket):
 	"""for mob move"""
 	mapinfo = mapdic.get(int(mob.map))
@@ -637,7 +632,7 @@ def mobmove(mob, x, y, pclist, mapdic, netio, createpacket):
 	rawx,rawy = int(rawx),int(rawy)
 	mobmoveraw(mob, rawx, rawy, pclist, mapdic, netio,\
 				createpacket, x, y)
-	
+
 def mobmoveraw(mob, rawx, rawy, pclist, mapdic, \
 				netio, createpacket, x=None, y=None):
 	"""mob move raw / call from mob move"""
@@ -673,7 +668,7 @@ def mobmoveraw(mob, rawx, rawy, pclist, mapdic, \
 	#print datatype,datacontent
 	netio.sendmap(datatype, datacontent, pclist, mob, None)
 	#will use mob.map
-	
+
 def mob(pc, mobid):
 	"""make mob and announce"""
 	mobid = int(mobid)
@@ -715,7 +710,7 @@ def mob(pc, mobid):
 		#モンスターの状態
 		datatype,datacontent = pc.e.createpacket.create157c(newmob)
 		pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-	
+
 def killallmob(pc):
 	"""kill all mob on pc.map"""
 	with pc.e.lock_moblist:
@@ -733,8 +728,3 @@ def killallmob(pc):
 				print "[event]", "killallmob error", exceptinfo()
 	systemmessage(pc, "kill %s mob"%(len(removelist), ))
 	print "[event]", "kill", len(removelist), "mob"
-	
-	
-	
-	
-	

@@ -26,65 +26,62 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+#
 import ConfigParser
 import sys
 import os
 import io
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	traceback = None
+import traceback
+
+TYPE_TOPS = ["ARMOR_UPPER",
+			"ONEPIECE",
+			"COSTUME",
+			"BODYSUIT",
+			"WEDDING",
+			"OVERALLS",
+			"FACEBODYSUIT",
+			"ONEPIECE"
+			]
+TYPE_RIGHT = ["CLAW",
+			"HAMMER",
+			"STAFF",
+			"SWORD",
+			"AXE",
+			"SPEAR",
+			"HANDBAG",
+			"GUN",
+			"ETC_WEAPON",
+			"SHORT_SWORD",
+			"RAPIER",
+			"BOOK",
+			"DUALGUN",
+			"RIFLE",
+			"THROW",
+			"ROPE",
+			"BULLET",
+			"ARROW",
+			]
+TYPE_LEFT = ["BOW",
+			"SHIELD",
+			"LEFT_HANDBAG",
+			"ACCESORY_FINGER",
+			"STRINGS",
+			]
+TYPE_SHOES = ["LONGBOOTS",
+			"BOOTS",
+			"SHOES",
+			"HALFBOOTS",
+			]
+TYPE_PET = ["BACK_DEMON",
+			"PET",
+			"RIDE_PET",
+			"PET_NEKOMATA",
+			]
 
 class PC:
 	def __init__(self):
-		self.typetops = list()
-		self.typetops.append("ARMOR_UPPER")
-		self.typetops.append("ONEPIECE")
-		self.typetops.append("COSTUME")
-		self.typetops.append("BODYSUIT")
-		self.typetops.append("WEDDING")
-		self.typetops.append("OVERALLS")
-		self.typetops.append("FACEBODYSUIT")
-		self.typetops.append("ONEPIECE")
-		self.typeright = list()
-		self.typeright.append("CLAW")
-		self.typeright.append("HAMMER")
-		self.typeright.append("STAFF")
-		self.typeright.append("SWORD")
-		self.typeright.append("AXE")
-		self.typeright.append("SPEAR")
-		self.typeright.append("HANDBAG")
-		self.typeright.append("GUN")
-		self.typeright.append("ETC_WEAPON")
-		self.typeright.append("SHORT_SWORD")
-		self.typeright.append("RAPIER")
-		self.typeright.append("BOOK")
-		self.typeright.append("DUALGUN")
-		self.typeright.append("RIFLE")
-		self.typeright.append("THROW")
-		self.typeright.append("ROPE")
-		self.typeright.append("BULLET")
-		self.typeright.append("ARROW")
-		self.typeleft = list()
-		self.typeleft.append("BOW")
-		self.typeleft.append("SHIELD")
-		self.typeleft.append("LEFT_HANDBAG")
-		self.typeleft.append("ACCESORY_FINGER")
-		self.typeleft.append("STRINGS")
-		self.typeshoes = list()
-		self.typeshoes.append("LONGBOOTS")
-		self.typeshoes.append("BOOTS")
-		self.typeshoes.append("SHOES")
-		self.typeshoes.append("HALFBOOTS")
-		self.typepet = list()
-		self.typepet.append("BACK_DEMON")
-		self.typepet.append("PET")
-		self.typepet.append("RIDE_PET")
-		self.typepet.append("PET_NEKOMATA")
 		self.pcinit()
-	
+
 	"""def __setattr__(self, attr, value):
 		#print attr, value
 		self.__dict__[attr] = value
@@ -94,7 +91,7 @@ class PC:
 		#import eventobj
 		if attr in type_updatepc:
 			eventobj.updatepc(self)"""
-	
+
 	def setequip(self, pc, iid, itemobj, itemdic):
 		#print pc
 		iid = int(iid)
@@ -132,7 +129,7 @@ class PC:
 			pc.equip.chestacce = iid
 			new = 10
 		#上半身
-		elif item.Type in self.typetops:
+		elif item.Type in TYPE_TOPS:
 			if pc.equip.tops != 0:
 				old.append(pc.equip.tops)
 			if item.Type == "ONEPIECE" and pc.equip.bottoms != 0:
@@ -158,19 +155,19 @@ class PC:
 			pc.equip.backpack = iid
 			new = 13
 		#右手装備
-		elif item.Type in self.typeright:
+		elif item.Type in TYPE_RIGHT:
 			if pc.equip.right != 0:
 				old.append(pc.equip.right)
 			pc.equip.right = iid
 			new = 14
 		#左手装備
-		elif item.Type in self.typeleft:
+		elif item.Type in TYPE_LEFT:
 			if pc.equip.left != 0:
 				old.append(pc.equip.left)
 			pc.equip.left = iid
 			new = 15
 		#靴
-		elif item.Type in self.typeshoes:
+		elif item.Type in TYPE_SHOES:
 			if pc.equip.shoes != 0:
 				old.append(pc.equip.shoes)
 			pc.equip.shoes = iid
@@ -182,7 +179,7 @@ class PC:
 			pc.equip.socks = iid
 			new = 17
 		#ペット
-		elif item.Type in self.typepet:
+		elif item.Type in TYPE_PET:
 			if pc.equip.pet != 0:
 				old.append(pc.equip.pet)
 			pc.equip.pet = iid
@@ -583,15 +580,12 @@ class PC:
 		
 		except ConfigParser.NoOptionError, e:
 			print e
-	
+
 	def reset_attack_info(self):
 		if not self.attacking:
 			return
-		if traceback:
-			print "[ pc  ]", "stop attacking from",
-			print traceback.extract_stack()[-2][2]
-		else:
-			print "[ pc  ]", "stop attacking"
+		print "[ pc  ]", "stop attacking from",
+		print traceback.extract_stack()[-2][2]
 		self.attacking = False
 		with self.e.lock_pclist:
 			self.attacking = False
@@ -734,7 +728,6 @@ class PC:
 			self.aspd = 750 #190
 			self.cspd = 187
 			self.adelay = 2 * (1 - self.aspd/1000.0)
-			
 			self.maxcapa = 1000
 			self.maxrightcapa = 0
 			self.maxleftcapa = 0
@@ -751,4 +744,7 @@ class PC:
 			self.rightpayl = 0
 			self.leftpayl = 0
 			self.backpayl = 0
+
+
+
 

@@ -26,21 +26,16 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+#
 from __future__ import division
 import os
 import socket
 import sys
 import rijndael
 from cryptio import CryptIO
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
+import traceback
+exceptinfo = traceback.format_exc
+
 class NetIO:
 	def init(self, cryptio):
 		self.cryptio = cryptio
@@ -90,9 +85,7 @@ class NetIO:
 					data = 256 - int(str(data)[1:])
 					data = hex(data)[2:]
 					data = "f"*(length-len(data)) + data
-					#while len(data) < length:
-					#	data = "f"+data
-					#print "[debug]",data
+					#print "[debug]", data
 					return data
 			if data != None:
 				data = int(data)
@@ -105,8 +98,6 @@ class NetIO:
 				print "[netio]","error on datatohex: data too short"
 				data = ""
 				data = data.zfill(length) # data = "0"*(length-len(data)) + data
-				#while len(data) < length:
-				#	data = "0"+data
 			else:
 				data = data[2:] # 0x01 -> 01
 				if len(data) > length:
@@ -114,8 +105,6 @@ class NetIO:
 					data = data[:length]
 				else:
 					data = data.zfill(length) # data = "0"*(length-len(data)) + data
-					#while len(data) < length:
-					#	data = "0"+data
 		except Exception:
 			print "[netio]","error on pack /", exceptinfo()
 			data = "00"
@@ -159,7 +148,3 @@ class NetIO:
 					self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
 			print "[netio]","error on sendserver /", exceptinfo()
-	
-	
-	
-	

@@ -28,12 +28,12 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#
 uselogfile = 0
 enableattackhandle = 0
-
+#
 print "-----------------------------------------"
-print "|\tpyeco 0.51.1 / 2011-11-11\t\t|"
+print "|\tpyeco 0.51.2 / 2011-11-11\t|"
 print "-----------------------------------------"
 print "[ all ]", "loading library ...",
 import os
@@ -74,8 +74,7 @@ def thread_savepcdata(pclist, lock_print, lock_pclist):
 				for p in pclist.itervalues():
 					if not p.online:
 						continue
-					p.saveallconfig(p, \
-						"UserDB/"+str(p.account)+".ini")
+					p.saveallconfig(p, "UserDB/"+str(p.account)+".ini")
 			time.sleep(60)
 		except KeyboardInterrupt:
 			print "[ all ]", "thread_savepcdata end"
@@ -84,7 +83,6 @@ def thread_savepcdata(pclist, lock_print, lock_pclist):
 			print "[timer]", "timer_savepcdata error", sys.exc_info()
 
 def create_global_serverobj():
-	"""create_global_serverobj"""
 	global global_serverobj
 	global_serverobj = Server()
 	print "[ all ]", "loading server config ...",
@@ -92,7 +90,6 @@ def create_global_serverobj():
 	print "over"
 
 def create_global_itemdic():
-	"""create_global_itemdic"""
 	global global_itemobj
 	global global_itemdic
 	global_itemobj = Item()
@@ -102,7 +99,6 @@ def create_global_itemdic():
 	print "over", "	", len(global_itemdic), "	item load"
 
 def create_global_mapdic():
-	"""create_global_mapdic"""
 	global global_mapobj
 	global global_mapdic
 	global_mapobj = Map()
@@ -111,7 +107,6 @@ def create_global_mapdic():
 	print "over", "	", len(global_mapdic), "	map load"
 
 def create_global_shopdic():
-	"""create_global_shopdic"""
 	global global_shopobj
 	global global_shopdic
 	global_shopobj = Shop()
@@ -120,7 +115,6 @@ def create_global_shopdic():
 	print "over", "	", len(global_shopdic), "	shop load"
 
 def create_global_npcdic():
-	"""create_global_npcdic"""
 	global global_npcobj
 	global global_npcdic
 	global_npcobj = Npc()
@@ -129,7 +123,6 @@ def create_global_npcdic():
 	print "over", "	", len(global_npcdic), "	npc load"
 
 def create_global_skilldic():
-	"""create_global_skilldic"""
 	global global_skillobj
 	global global_skilldic
 	global_skillobj = Skill()
@@ -138,7 +131,6 @@ def create_global_skilldic():
 	print "over	", len(global_skilldic), "	skill load"
 
 def create_global_mobdic():
-	"""create_global_mobdic"""
 	global global_mobobj
 	global global_mobdic
 	global_mobobj = Mob()
@@ -147,7 +139,6 @@ def create_global_mobdic():
 	print "over", "	", len(global_mobdic), "	mob load"
 
 def create_global_eventhandle():
-	"""create_global_eventhandle"""
 	global global_eventhandle
 	global_eventhandle = EventHandle()
 	print "[ all ]","loading script ...",
@@ -155,17 +146,14 @@ def create_global_eventhandle():
 	print "over", "	", len(global_eventhandle.scriptdic), "	event load"
 
 def create_global_skillhandle():
-	"""create_global_skillhandle"""
 	global global_skillhandle
 	global_skillhandle = SkillHandle()
 
 def create_global_attackhandle():
-	"""create_global_attackhandle"""
 	global global_attackhandle
 	global_attackhandle = AttackHandle()
 
 def create_global_lock():
-	"""create_global_lock"""
 	from threading import RLock
 	global global_lock_print
 	global global_lock_pclist
@@ -175,7 +163,6 @@ def create_global_lock():
 	global_lock_moblist = RLock()
 
 def create_global_cryptio():
-	"""create_global_cryptio"""
 	global global_cryptio
 	global_cryptio = CryptIO()
 
@@ -193,45 +180,21 @@ def create_global_commandio():
 	global_commandio = Command()
 
 def create_pclist():
-	"""create_pclist"""
 	global pclist
 	pclist = {}
 	print "[ all ]","loading pclist ...",
-	for a,b,c in os.walk(os.getcwd() + "/UserDB"):
+	for a, b, c in os.walk(os.getcwd() + "/UserDB"):
 		for x in c:
 			if len(str(x)) > 4 and x[-4:] == ".ini":
 				pclist[x[:-4]] = None
-	#tmplist = list()
 	for x in pclist:
 		pclist[x] = PC()
-		#pclist[x].sort = PC.sort()
-		#pclist[x].equip = PC.equip()
-		#pclist[x].status = PC.status()
 		pclist[x].setfunc(global_itemobj, global_itemdic)
 		pclist[x].loadallconfig(pclist[x], "UserDB/"+x+".ini")
 		pclist[x].account = x
-		#tmplist.append(x)
-	#print "[ all ]",tmplist
 	print "over", "	", len(pclist), "	pc load"
-	"""pclist["eco"].account = "0"
-	pclist["ico"].account = "0"
-	print pclist["eco"].account
-	print pclist["ico"].account
-	pclist["ico"].account = "4"
-	print pclist["eco"].account
-	print pclist["ico"].account
-	print "---------------edit sub class"
-	pclist["eco"].equip.right = "0"
-	pclist["ico"].equip.right = "0"
-	print pclist["eco"].equip.right
-	print pclist["ico"].equip.right
-	pclist["ico"].equip.right = "4"
-	print pclist["eco"].equip.right
-	print pclist["ico"].equip.right
-	sys.exit()#testcode"""
 
 def create_moblist():
-	"""create_moblist"""
 	global moblist
 	moblist = {}
 
@@ -245,27 +208,23 @@ def init_createpacket():
 	global_createpacket.init(global_serverobj)
 
 def init_loginserver():
-	"""init_loginserver"""
 	global factory
 	loginserverport = int(global_serverobj.loginserverport)
 	factory = Factory(global_serverobj)
 	reactor.listenTCP(loginserverport, factory)
 
 def init_mapserver():
-	"""init_mapserver"""
 	global factory_map
 	mapserverport = int(global_serverobj.mapserverport)
 	factory_map = Factory_Map(global_serverobj)
 	reactor.listenTCP(mapserverport, factory_map)
 
 def init_webserver():
-	"""init_webserver"""
 	global webserver
 	webserver = WebServer()
 	webserver.create_listen_thread(global_serverobj)
 
 def exec_thread():
-	"""exec_timer"""
 	global global_mobhandle
 	thread.start_new_thread(thread_savepcdata, (pclist, \
 					global_lock_print, global_lock_pclist))
@@ -276,7 +235,6 @@ def exec_thread():
 	time.sleep(0.1)
 
 def setlibdic_serverobj():
-	"""setlibdic_serverobj"""
 	libdic = {"lock_print"	:	global_lock_print,
 			"lock_pclist"	:	global_lock_pclist,
 			"lock_moblist"	:	global_lock_moblist,
@@ -303,7 +261,6 @@ def setlibdic_serverobj():
 	global_serverobj.enableattackhandle = enableattackhandle
 
 def exit_pyeco():
-	"""exit_pyeco"""
 	for x in pclist:
 		#print pclist[x].online
 		if pclist[x].online:
@@ -325,7 +282,6 @@ def exit_pyeco():
 		os.kill(os.getpid(), signal.SIGKILL)
 
 class Log:
-	"""log control"""
 	def __init__(self):
 		self.logtime = True
 	def write(self, s):
@@ -348,33 +304,31 @@ class Log:
 			logfile.flush()
 
 if __name__ == "__main__":
-	os.chdir(sys.path[0])
+	os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
 	#thread.stack_size(256*1024)
 	threadable.init() #twisted.python.threadable
-	
 	stdout = sys.stdout
 	if uselogfile:
 		logfile = file("pyeco.log", "a")
 		logfile.write("-"*30+" pyeco start "+"-"*30+"\n")
 	sys.stdout = Log()
-	
 	create_global_serverobj() # a class
-	create_global_itemdic() # a dic , key is int item id
-	create_global_mapdic() # a dic, key is int map id
-	create_global_shopdic() # a dic, key is int shop id
-	create_global_npcdic() # a dic, key is int npc id
-	create_global_skilldic() # a dic, key is int skill id
-	create_global_mobdic() # a dic, key is int mob id
-	create_global_eventhandle() # a class, and load script
-	create_global_cryptio() # a class
-	create_global_netio() # a class, need global_netio
-	create_global_createpacket() # a class
-	create_global_commandio() # a class
-	create_global_skillhandle() # a class
-	create_global_attackhandle() # a class
-	create_global_lock() # a thread lock
-	create_pclist() # a dic, key is str account name
-	create_moblist() # a dic, key is int mob server id
+	create_global_itemdic() # key: int item id
+	create_global_mapdic() # key: int map id
+	create_global_shopdic() # key: int shop id
+	create_global_npcdic() # key: int npc id
+	create_global_skilldic() # key: int skill id
+	create_global_mobdic() # key: int mob id
+	create_global_eventhandle() # load script
+	create_global_cryptio()
+	create_global_netio() # need global_netio
+	create_global_createpacket()
+	create_global_commandio()
+	create_global_skillhandle()
+	create_global_attackhandle()
+	create_global_lock() #thread lock
+	create_pclist() # key: str account name
+	create_moblist() # key: int mob server id
 	setlibdic_serverobj() # set itemdic, mapdic, etc... in serverobj
 	init_createpacket() # createpacket.init
 	init_skillhandle() # skillhandle.init
@@ -383,7 +337,5 @@ if __name__ == "__main__":
 	init_loginserver() # reactor.listenTCP
 	init_mapserver() # reactor.listenTCP
 	init_webserver() # reactor.listenTCP
-	
 	reactor.run() # blocking
 	exit_pyeco() # save online player data and kill self pid
-

@@ -26,19 +26,14 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+#
 import os
 import socket
 import sys
 import rijndael
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
+import traceback
+exceptinfo = traceback.format_exc
+
 class CryptIO:
 	def encode(self,code,realcodesize=None):
 		try:
@@ -95,7 +90,7 @@ class CryptIO:
 			print "[crypt]","error on encode /", exceptinfo()
 			data = None
 		return data
-
+	
 	def decode(self,code):
 		try:
 			key = "00000000000000000000000000000000"
@@ -126,5 +121,3 @@ class CryptIO:
 			print "[crypt]","error on decode /", exceptinfo()
 			text,textlength = None,None
 		return text,textlength
-	
-	

@@ -819,12 +819,12 @@ class CreatePacket:
 		datacontent = self.pack(sid, 8)#発言者ID
 		datacontent += self.pack(textlength, 2)+text
 		#発言者ID
-    		#* -1 : システムメッセージ(黄)
-    		#* 0 : 管理者メッセージ(桃)
-    		#* 1-9999 : PCユーザー
+		#* -1 : システムメッセージ(黄)
+		#* 0 : 管理者メッセージ(桃)
+		#* 1-9999 : PCユーザー
 		#* 10000-30000 : ペット
 		#* 他 : 飛空庭設置ペットなど
-		return datatype,datacontent
+		return datatype, datacontent
 	
 	def create121c(self, pc, motionid, isloop=0, object_id=None):
 		"""モーション通知"""
@@ -875,11 +875,11 @@ class CreatePacket:
 		datacontent += self.pack(pc.ex, 2)#転生特典
 		datacontent += self.pack(pc.wing, 2)#転生翼
 		datacontent += self.pack(pc.wingcolor, 2)#転生翼色
-		cachetype,cache = self.create09e9(pc)
+		cachetype, cache = self.create09e9(pc)
 		cache = cache[8:]
 		datacontent += cache#装備の0Dから乗り物の染色値まで
 		datacontent += "01"+"00"#パーティー名
-		datacontent += "01"#パーティーリーダーor未所属なら1、それ以外は0 
+		datacontent += "01"#パーティーリーダーor未所属なら1、それ以外は0
 		datacontent += "00000000"#リングID#変更時はr1ad1
 		datacontent += "01"+"00"#リング名
 		datacontent += "01"#1:リンマスorリングに入ってない 0:リングメンバ

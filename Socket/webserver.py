@@ -26,7 +26,7 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+#
 import os
 import sys
 import BaseHTTPServer
@@ -36,14 +36,9 @@ import urllib
 import threading
 import hashlib
 from Object.pcobj import PC
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
+import traceback
+exceptinfo = traceback.format_exc
+
 def convpoststr(text):
 	text = str(text)
 	while True:
@@ -289,7 +284,7 @@ class HTTPHandle(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				self.pclist[account].saveallconfig(self.pclist[account], "UserDB/"+str(account)+".ini")
 				createsuccess = True
 		return createsuccess
-	
+
 class WebServer:
 	def listen_thread(self, serverobj):
 		webserverport = int(serverobj.webserverport)
@@ -306,4 +301,3 @@ class WebServer:
 		self.thread_listen.start()
 		with serverobj.lock_print:
 			print "[ web ] listening", serverobj.serveraddress, serverobj.webserverport
-
