@@ -26,32 +26,26 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import os
 import sys
 import time
 import thread
 from Object import eventobj
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
-class AttackHandle:
+import traceback
+
+class AttackHandle(DataAccessControl):
 	def __init__(self):
 		pass
 	
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.except_count = 0
-		self.send = self.netio.send
-		self.sendmap = self.netio.sendmap
-		self.sendmapwithoutself = self.netio.sendmapwithoutself
-		self.sendserver = self.netio.sendserver
+		self.add("except_count", 0)
+		self.add("send", self.netio.send)
+		self.add("sendmap", self.netio.sendmap)
+		self.add("sendmapwithoutself", self.netio.sendmapwithoutself)
+		self.add("sendserver", self.netio.sendserver)
 		#self.oldtime = time.time()
 	
 	def attackmob(self, pc, targetsid):
@@ -133,8 +127,7 @@ class AttackHandle:
 				break
 			except:
 				self.except_count += 1
-				print "[ mob ]", "thread_attackhandle error", exceptinfo()
+				print "[ mob ]", "thread_attackhandle error", traceback.format_exc()
 				if self.except_count > 100:
 					print "[ all ]", "thread_attackhandle end / except_count > 100"
 					break
-	

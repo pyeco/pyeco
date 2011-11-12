@@ -33,7 +33,7 @@ uselogfile = 0
 enableattackhandle = 0
 #
 print "-----------------------------------------"
-print "|\tpyeco 0.51.2 / 2011-11-11\t|"
+print "|\tpyeco 0.51.3 / 2011-11-13\t|"
 print "-----------------------------------------"
 print "[ all ]", "loading library ...",
 import os
@@ -74,7 +74,7 @@ def thread_savepcdata(pclist, lock_print, lock_pclist):
 				for p in pclist.itervalues():
 					if not p.online:
 						continue
-					p.saveallconfig(p, "UserDB/"+str(p.account)+".ini")
+					p.saveallconfig("UserDB/%s.ini"%p.account)
 			time.sleep(60)
 		except KeyboardInterrupt:
 			print "[ all ]", "thread_savepcdata end"
@@ -86,7 +86,7 @@ def create_global_serverobj():
 	global global_serverobj
 	global_serverobj = Server()
 	print "[ all ]", "loading server config ...",
-	global_serverobj.loadallconfig(global_serverobj, "server.ini")
+	global_serverobj.loadallconfig("server.ini")
 	print "over"
 
 def create_global_itemdic():
@@ -187,11 +187,10 @@ def create_pclist():
 		for x in c:
 			if len(str(x)) > 4 and x[-4:] == ".ini":
 				pclist[x[:-4]] = None
-	for x in pclist:
-		pclist[x] = PC()
-		pclist[x].setfunc(global_itemobj, global_itemdic)
-		pclist[x].loadallconfig(pclist[x], "UserDB/"+x+".ini")
-		pclist[x].account = x
+	for name in pclist:
+		pclist[name] = PC(global_itemobj, global_itemdic)
+		pclist[name].loadallconfig("UserDB/%s.ini"%name)
+		pclist[name].account = name
 	print "over", "	", len(pclist), "	pc load"
 
 def create_moblist():
@@ -264,9 +263,9 @@ def exit_pyeco():
 	for x in pclist:
 		#print pclist[x].online
 		if pclist[x].online:
-			pclist[x].saveallconfig(pclist[x], "UserDB/"+str(pclist[x].account)+".ini")
+			pclist[x].saveallconfig("UserDB/%s.ini"%pclist[x].account)
 	try:
-		null = open("/dev/null","r")
+		null = open("/dev/null", "r")
 	except:
 		#print "current system is windows"
 		from ctypes import windll

@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
 import os
 import sys
 import BaseHTTPServer
@@ -37,7 +36,6 @@ import threading
 import hashlib
 from Object.pcobj import PC
 import traceback
-exceptinfo = traceback.format_exc
 
 def convpoststr(text):
 	text = str(text)
@@ -251,7 +249,7 @@ class HTTPHandle(SimpleHTTPServer.SimpleHTTPRequestHandler):
 					try:
 						existid.append(int(p.sid))
 					except:
-						print "[ web ]", "createaccount error at append pc sid", exceptinfo()
+						print "[ web ]", "createaccount error at append pc sid", traceback.format_exc()
 				existid.extend(self.moblist.keys()) #maybe need map(int, keys)
 				newcharid = 100
 				while newcharid in existid:
@@ -259,9 +257,8 @@ class HTTPHandle(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				newcharid = int(newcharid)
 				gmlevel = int(self.serverobj.defaultgmlevel)
 				#self.serverobj.newcharid = int(newcharid)+1
-				self.serverobj.saveallconfig(self.serverobj, "server.ini")
-				newpc = PC()
-				newpc.setfunc(self.itemobj, self.itemdic)
+				self.serverobj.saveallconfig("server.ini")
+				newpc = PC(self.itemobj, self.itemdic)
 				newpc = newpc.makenewpc()
 				newpc.account = account
 				newpc.charid = newcharid
@@ -281,17 +278,16 @@ class HTTPHandle(SimpleHTTPServer.SimpleHTTPRequestHandler):
 				if postdic.get("face"):
 					newpc.face = int(postdic.get("face"))
 				self.pclist[account] = newpc
-				self.pclist[account].saveallconfig(self.pclist[account], "UserDB/"+str(account)+".ini")
+				self.pclist[account].saveallconfig("UserDB/%s.ini"%account)
 				createsuccess = True
 		return createsuccess
 
 class WebServer:
 	def listen_thread(self, serverobj):
 		webserverport = int(serverobj.webserverport)
-		serverobj.setlibdic(serverobj.libdic, HTTPHandle)
+		serverobj.setlibdic_NoDataAccessControl(serverobj.libdic, HTTPHandle)
 		server = BaseHTTPServer.HTTPServer(("0.0.0.0",webserverport), HTTPHandle)
 		server.serve_forever()
-	
 	def create_listen_thread(self, serverobj):
 		self.lock_pclist = serverobj.lock_pclist
 		self.lock_moblist = serverobj.lock_moblist

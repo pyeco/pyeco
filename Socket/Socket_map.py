@@ -26,13 +26,16 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+from DataAccessControl import DataAccessControl
 from twisted.internet.protocol import Protocol, ServerFactory
 #from twisted.internet import reactor
 import os
 import socket
 import sys
 import rijndael
+DIRECT_WRITE_NAME = ["connected",
+				"transport",
+				]
 
 class Factory_Map(ServerFactory):
 	def __init__(self, serverobj):
@@ -43,24 +46,30 @@ class Factory_Map(ServerFactory):
 		print "[ map ]", "new client accepted"
 		return Socket_Map(self.serverobj)
 
-class Socket_Map(Protocol):
+class Socket_Map(Protocol, DataAccessControl):
 	def __init__(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.packethandle_map = {}
+		self.add("packethandle_map", {})
 		self.serverobj.clientlistcount_map += 1
-		self.clientindex = int(self.serverobj.clientlistcount_map)
-		self.serverobj.clientlist_map[self.clientindex] = PC()
-		self.serverobj.clientlist_map[self.clientindex].name = None
+		self.add("clientindex", int(self.serverobj.clientlistcount_map))
+		self.serverobj.clientlist_map[self.clientindex] = PC(self.itemobj, self.itemdic)
+		self.serverobj.clientlist_map[self.clientindex].name = ""
 		self.serverobj.clientlist_map[self.clientindex].mapclient = self
 		self.serverobj.packethandle_map[self.clientindex] = PacketHandle_Map()
 		self.serverobj.packethandle_map[self.clientindex].init(self.serverobj)
-		self.pc = self.serverobj.clientlist_map[self.clientindex]
-		self.buffer = ""
-		self.ecoinit = False
-		self.ecorecvkey = False
-		self.encode = self.cryptio.encode
-		self.decode = self.cryptio.decode
+		self.add("pc", self.serverobj.clientlist_map[self.clientindex])
+		self.add("buffer", "")
+		self.add("ecoinit", False)
+		self.add("ecorecvkey", False)
+		self.add("encode", self.cryptio.encode)
+		self.add("decode", self.cryptio.decode)
+	
+	def __setattr__(self, name, value):
+		if name in DIRECT_WRITE_NAME:
+			self.__dict__[name] = value
+		else:
+			DataAccessControl.__setattr__(self, name, value)
 	
 	def dataReceived(self, data):
 		self.buffer += data.encode("hex")
@@ -131,6 +140,7 @@ class Socket_Map(Protocol):
 		pc.mapclient = None
 		pc.online = False
 		#reset
+		pc.sendmapserver = False
 		pc.logout = False
 		pc.visible = False
 		pc.loginevent = False
@@ -138,14 +148,14 @@ class Socket_Map(Protocol):
 		pc.motion = 111
 		pc.effect = None
 		pc.tradestate = 0
-		pc.tradelist = None
-		pc.tradereturnlist = None
+		pc.tradelist = []
+		pc.tradereturnlist = []
 		pc.isnpctrade = False
 		pc.warehouse_open = None
 		pc.battlestatus = 0
 		pc.attacking = False
 		pc.attacking_target = None
 		pc.attacking_delay = 0
-	
+
 from Handle.packethandle_map import PacketHandle_Map
 from Object.pcobj import PC

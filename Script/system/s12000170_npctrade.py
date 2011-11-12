@@ -10,6 +10,6 @@ class Script:
 	def main(self, pc):
 		itemlist = npctrade(pc)
 		for x in itemlist:
-			print "[trade]", x.Id, x.Count
+			print "[trade]", x.id, x.count
 		print "[trade]","npctrade over"
 		#print abc #test exceptinfo

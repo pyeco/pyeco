@@ -26,16 +26,15 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+from DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
 import rijndael
 import traceback
-exceptinfo = traceback.format_exc
 
-class CryptIO:
-	def encode(self,code,realcodesize=None):
+class CryptIO(DataAccessControl):
+	def encode(self, code, realcodesize=None):
 		try:
 			key = "00000000000000000000000000000000"
 			key = key.decode("hex")
@@ -87,7 +86,7 @@ class CryptIO:
 			length_crypt = length_crypt.decode("hex")
 			data = length_crypt + length_raw + code
 		except Exception:
-			print "[crypt]","error on encode /", exceptinfo()
+			print "[crypt]","error on encode /", traceback.format_exc()
 			data = None
 		return data
 	
@@ -118,6 +117,8 @@ class CryptIO:
 				text = r.decrypt(code)
 			text = text.encode("hex")
 		except Exception:
-			print "[crypt]","error on decode /", exceptinfo()
+			print "[crypt]","error on decode /", traceback.format_exc()
 			text,textlength = None,None
 		return text,textlength
+
+

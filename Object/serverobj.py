@@ -26,26 +26,40 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from Socket.DataAccessControl import DataAccessControl
 import ConfigParser
 import os
 import io
+import StringIO
 
-class Server:
+class Server(DataAccessControl):
 	def __init__(self):
-		self.loginserverport = None
-		self.mapserverport = None
-		self.webserverport = None
-		self.serveraddress = None
-		self.defaultgmlevel = None
-		self.gmlevel = {}
-		self.clientlistcount = 0
-		self.clientlist = {}
-		self.packethandle = {}
-		self.clientlistcount_map = 0
-		self.clientlist_map = {}
-		self.packethandle_map = {}
+		self.add("loginserverport", 0)
+		self.add("mapserverport", 0)
+		self.add("webserverport", 0)
+		self.add("serveraddress", "")
+		self.add("defaultgmlevel", 0)
+		self.add("gmlevel", {})
+		self.add("loginevent", 0) #event id
+		self.add("clientlistcount", 0)
+		self.add("clientlist", {})
+		self.add("packethandle", {})
+		self.add("clientlistcount_map", 0)
+		self.add("clientlist_map", {})
+		self.add("packethandle_map", {})
+		self.add("enableattackhandle", False)
+		self.add("cfg", None) #ConfigParser.SafeConfigParser()
+		self.add("readhandle", None) #open(path, "rb")
+		self.add("writehandle", None) #open(path, "wb")
 	
 	def setlibdic(self, libdic, selfx=None):
+		if not selfx:
+			selfx = self
+		selfx.add("libdic", libdic)
+		for name, value in selfx.libdic.iteritems():
+			selfx.add(name, value)
+	
+	def setlibdic_NoDataAccessControl(self, libdic, selfx=None):
 		if not selfx:
 			selfx = self
 		selfx.libdic = libdic
@@ -56,7 +70,7 @@ class Server:
 				continue
 			selfx.__dict__[attr] = value
 	
-	def csv(self,var):
+	def csv(self, var):
 		var = var.split(",")
 		while True:
 			try:
@@ -65,24 +79,10 @@ class Server:
 				break
 		return var
 	
-	def saveallconfig(self, server, ConfigFileName):
-		#server.cfg.set("main","newcharid",server.newcharid)
-		server.cfg.set("main","loginserverport", str(server.loginserverport))
-		server.cfg.set("main","mapserverport", str(server.mapserverport))
-		server.cfg.set("main","webserverport", str(server.webserverport))
-		server.cfg.set("main","serveraddress", str(server.serveraddress))
-		server.cfg.set("player","defaultgmlevel", str(server.defaultgmlevel))
-		server.cfg.set("player","loginevent", str(server.loginevent))
-		for cmd, gmlevel in server.gmlevel.iteritems():
-			server.cfg.set("gmlevel", cmd, str(gmlevel))
-		server.writehandle = open("./"+ConfigFileName, "w")
-		server.cfg.write(server.writehandle)
-		server.writehandle.close()
-	
-	def loadallconfig(self, server, ConfigFileName):
-		server.readhandle = open("./"+ConfigFileName, "r")
-		content = server.readhandle.read()
-		server.readhandle.close()
+	def loadallconfig(self, ConfigFileName):
+		self.readhandle = open("./%s"%ConfigFileName, "rb")
+		content = self.readhandle.read()
+		self.readhandle.close()
 		contentcopy = content
 		contenthead_typea = content[:2].encode("hex").upper()
 		contenthead_typeb = content[:3].encode("hex").upper()
@@ -93,25 +93,43 @@ class Server:
 		elif contenthead_typeb == "EFBBBF":
 			content = content[3:]
 		if len(content) != len(contentcopy):
-			server.readhandle = open("./"+ConfigFileName, "w")
-			server.readhandle.write(content)
-			server.readhandle.close()
-		server.readhandle.close()
+			self.readhandle = open("./%s"%ConfigFileName, "wb")
+			self.readhandle.write(content)
+			self.readhandle.close()
+		self.readhandle.close()
 		
-		vmcfg = io.BytesIO(content)
-		server.cfg = ConfigParser.SafeConfigParser()
-		server.cfg.readfp(vmcfg)
+		vmcfg = StringIO.StringIO(content.replace("\r\n", "\n"))
+		self.cfg = ConfigParser.SafeConfigParser()
+		self.cfg.readfp(vmcfg)
 		vmcfg.close()
-		
 		try:
-			server.loginserverport = int(server.cfg.get("main", "loginserverport"))
-			server.mapserverport = int(server.cfg.get("main", "mapserverport"))
-			server.webserverport = int(server.cfg.get("main", "webserverport"))
-			server.serveraddress = server.cfg.get("main", "serveraddress")
-			server.defaultgmlevel = int(server.cfg.get("player", "defaultgmlevel"))
-			server.loginevent = int(server.cfg.get("player", "loginevent"))
-			cmds = server.cfg.options("gmlevel")
+			self.loginserverport = int(self.cfg.get("main", "loginserverport"))
+			self.mapserverport = int(self.cfg.get("main", "mapserverport"))
+			self.webserverport = int(self.cfg.get("main", "webserverport"))
+			self.serveraddress = self.cfg.get("main", "serveraddress")
+			self.defaultgmlevel = int(self.cfg.get("player", "defaultgmlevel"))
+			self.loginevent = int(self.cfg.get("player", "loginevent"))
+			cmds = self.cfg.options("gmlevel")
 			for cmd in cmds:
-				server.gmlevel[cmd] = int(server.cfg.get("gmlevel", cmd))
+				self.gmlevel[cmd] = int(self.cfg.get("gmlevel", cmd))
 		except ConfigParser.NoOptionError, e:
 			print e
+	
+	def saveallconfig(self, ConfigFileName):
+		self.cfg = ConfigParser.SafeConfigParser()
+		self.cfg.add_section("main")
+		self.cfg.add_section("player")
+		self.cfg.add_section("gmlevel")
+		self.cfg.set("main","loginserverport", str(self.loginserverport))
+		self.cfg.set("main","mapserverport", str(self.mapserverport))
+		self.cfg.set("main","webserverport", str(self.webserverport))
+		self.cfg.set("main","serveraddress", str(self.serveraddress))
+		self.cfg.set("player","defaultgmlevel", str(self.defaultgmlevel))
+		self.cfg.set("player","loginevent", str(self.loginevent))
+		for cmd, gmlevel in self.gmlevel.iteritems():
+			self.cfg.set("gmlevel", cmd, str(gmlevel))
+		vmcfg = StringIO.StringIO()
+		self.writehandle = open("./%s"%ConfigFileName, "wb")
+		self.cfg.write(vmcfg)
+		self.writehandle.write(vmcfg.getvalue().replace("\r\n", "\n").replace("\n", "\r\n"))
+		self.writehandle.close()

@@ -22,9 +22,3 @@ class Script:
 				motion(pc, motionid, 1)
 			else:
 				break
-	
-	
-	
-	
-	
-	

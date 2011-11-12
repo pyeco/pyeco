@@ -26,12 +26,62 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
-class CreatePacket:
+from Socket.DataAccessControl import DataAccessControl
+
+ACCESORY_TYPE_LIST = ["ACCESORY_NECK",
+				"JOINT_SYMBOL",
+				]
+UPPER_TYPE_LIST = ["ARMOR_UPPER",
+				"ONEPIECE",
+				"COSTUME",
+				"BODYSUIT",
+				"WEDDING",
+				"OVERALLS",
+				"FACEBODYSUIT",
+				]
+LOWER_TYPE_LIST = ["ARMOR_LOWER",
+				"SLACKS",
+				]
+RIGHT_TYPE_LIST = ["CLAW",
+				"HAMMER",
+				"STAFF",
+				"SWORD",
+				"AXE",
+				"SPEAR",
+				"HANDBAG",
+				"GUN",
+				"ETC_WEAPON",
+				"SHORT_SWORD",
+				"RAPIER",
+				"BOOK",
+				"DUALGUN",
+				"RIFLE",
+				"THROW",
+				"ROPE",
+				"BULLET",
+				"ARROW",
+				]
+LEFT_TYPE_LIST = ["BOW",
+				"SHIELD",
+				"LEFT_HANDBAG",
+				"ACCESORY_FINGER",
+				"STRINGS",
+				]
+BOOTS_TYPE_LIST = ["LONGBOOTS",
+				"BOOTS",
+				"SHOES",
+				"HALFBOOTS",
+				]
+PET_TYPE_LIST = ["BACK_DEMON",
+				"PET",
+				"RIDE_PET",
+				"PET_NEKOMATA",
+				]
+class CreatePacket(DataAccessControl):
 	def init(self, serverobj):
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.pack = self.netio.pack
-		self.packstr = self.netio.packstr
+		self.add("pack", self.netio.pack)
+		self.add("packstr", self.netio.packstr)
 	
 	def create0002(self, clientver):
 		"""認証接続確認(s0001)の応答"""
@@ -235,12 +285,12 @@ class CreatePacket:
 		datacontent = "00"#unknown#常に0
 		datacontent += "d6"#データサイズ
 		datacontent += self.pack(iid, 8)#インベントリNo
-		datacontent += self.pack(item.Id, 8)#アイテムID
+		datacontent += self.pack(item.id, 8)#アイテムID
 		datacontent += "00000000"#見た目,フィギュア,スケッチ情報
 		datacontent += self.pack(part, 2)#アイテムの場所
 		datacontent += "00000001"#鑑定済み:0x01 カードロック？:0x20
-		datacontent += self.pack(item.Durability_max, 4)#耐久度
-		datacontent += self.pack(item.Durability_max, 4)#最大耐久度or最大親密度
+		datacontent += self.pack(item.durability_max, 4)#耐久度
+		datacontent += self.pack(item.durability_max, 4)#最大耐久度or最大親密度
 		datacontent += "0000"#強化回数
 		datacontent += "0000"#カードスロット数
 		datacontent += "00000000"#カードID1
@@ -254,8 +304,8 @@ class CreatePacket:
 		datacontent += "00000000"#カードID9
 		datacontent += "00000000"#カードID10
 		datacontent += "00"#染色
-		datacontent += self.pack(item.Count, 4)#個数
-		datacontent += self.pack(item.Price, 8)#ゴーレム販売価格
+		datacontent += self.pack(item.count, 4)#個数
+		datacontent += self.pack(item.price, 8)#ゴーレム販売価格
 		datacontent += "0000"#ゴーレム販売個数
 		datacontent += "0000"#憑依重量
 		datacontent += "0000"#最大重量
@@ -265,57 +315,57 @@ class CreatePacket:
 		datacontent += "0000"#位置的にパッシブスキル？
 		datacontent += "0000"#位置的に憑依時可能Skill？
 		datacontent += "0000"#位置的に憑依パッシブSkill？
-		datacontent += self.pack(item.Str, 4)#str
-		datacontent += self.pack(item.Mag, 4)#mag
-		datacontent += self.pack(item.Vit, 4)#vit
-		datacontent += self.pack(item.Dex, 4)#dex
-		datacontent += self.pack(item.Agi, 4)#agi
-		datacontent += self.pack(item.Int, 4)#int
-		datacontent += self.pack(item.Luk, 4)#luk （ペットの場合現在HP
-		datacontent += self.pack(item.Cha, 4)#cha（ペットの場合転生回数
-		datacontent += self.pack(item.Hp, 4)#HP（使用出来るアイテムは回復
-		datacontent += self.pack(item.Sp, 4)#SP（同上
-		datacontent += self.pack(item.Mp, 4)#MP（同上
-		datacontent += self.pack(item.Speed, 4)#移動速度
-		datacontent += self.pack(item.Attack1, 4)#物理攻撃力(叩)
-		datacontent += self.pack(item.Attack2, 4)#物理攻撃力(斬)
-		datacontent += self.pack(item.Attack3, 4)#物理攻撃力(突)
-		datacontent += self.pack(item.Mattack, 4)#魔法攻撃力
-		datacontent += self.pack(item.Def, 4)#物理防御
-		datacontent += self.pack(item.Mdef, 4)#魔法防御
-		datacontent += self.pack(item.S_hit, 4)#近命中力
-		datacontent += self.pack(item.L_hit, 4)#遠命中力
-		datacontent += self.pack(item.Magic_hit, 4)#魔命中力
-		datacontent += self.pack(item.S_avoid, 4)#近回避
-		datacontent += self.pack(item.L_avoid, 4)#遠回避
-		datacontent += self.pack(item.Magic_avoid, 4)#魔回避
-		datacontent += self.pack(item.Critical_hit, 4)#クリティカル
-		datacontent += self.pack(item.Critical_avoid, 4)#クリティカル回避
-		datacontent += self.pack(item.Heal_hp, 4)#回復力？
-		datacontent += self.pack(item.Heal_mp, 4)#魔法回復力？
+		datacontent += self.pack(item.str, 4)#str
+		datacontent += self.pack(item.mag, 4)#mag
+		datacontent += self.pack(item.vit, 4)#vit
+		datacontent += self.pack(item.dex, 4)#dex
+		datacontent += self.pack(item.agi, 4)#agi
+		datacontent += self.pack(item.int, 4)#int
+		datacontent += self.pack(item.luk, 4)#luk （ペットの場合現在HP
+		datacontent += self.pack(item.cha, 4)#cha（ペットの場合転生回数
+		datacontent += self.pack(item.hp, 4)#HP（使用出来るアイテムは回復
+		datacontent += self.pack(item.sp, 4)#SP（同上
+		datacontent += self.pack(item.mp, 4)#MP（同上
+		datacontent += self.pack(item.speed, 4)#移動速度
+		datacontent += self.pack(item.atk1, 4)#物理攻撃力(叩)
+		datacontent += self.pack(item.atk2, 4)#物理攻撃力(斬)
+		datacontent += self.pack(item.atk3, 4)#物理攻撃力(突)
+		datacontent += self.pack(item.matk, 4)#魔法攻撃力
+		datacontent += self.pack(item.DEF, 4)#物理防御
+		datacontent += self.pack(item.mdef, 4)#魔法防御
+		datacontent += self.pack(item.s_hit, 4)#近命中力
+		datacontent += self.pack(item.l_hit, 4)#遠命中力
+		datacontent += self.pack(item.magic_hit, 4)#魔命中力
+		datacontent += self.pack(item.s_avoid, 4)#近回避
+		datacontent += self.pack(item.l_avoid, 4)#遠回避
+		datacontent += self.pack(item.magic_avoid, 4)#魔回避
+		datacontent += self.pack(item.critical_hit, 4)#クリティカル
+		datacontent += self.pack(item.critical_avoid, 4)#クリティカル回避
+		datacontent += self.pack(item.heal_hp, 4)#回復力？
+		datacontent += self.pack(item.heal_mp, 4)#魔法回復力？
 		datacontent += "0000"#スタミナ回復力？
-		datacontent += self.pack(item.Energy, 4)#無属性？
-		datacontent += self.pack(item.Fire, 4)#火属性
-		datacontent += self.pack(item.Water, 4)#水属性
-		datacontent += self.pack(item.Wind, 4)#風属性
-		datacontent += self.pack(item.Earth, 4)#地属性
-		datacontent += self.pack(item.Light, 4)#光属性
-		datacontent += self.pack(item.Dark, 4)#闇属性
-		datacontent += self.pack(item.Poison, 4)#毒（+なら毒回復、−なら毒状態に
-		datacontent += self.pack(item.Stone, 4)#石化
-		datacontent += self.pack(item.Paralyze, 4)#麻痺
-		datacontent += self.pack(item.Sleep, 4)#睡眠
-		datacontent += self.pack(item.Silence, 4)#沈黙
-		datacontent += self.pack(item.Slow, 4)#鈍足
-		datacontent += self.pack(item.Confuse, 4)#混乱
-		datacontent += self.pack(item.Freeze, 4)#凍結
-		datacontent += self.pack(item.Stan, 4)#気絶
+		datacontent += self.pack(item.energy, 4)#無属性？
+		datacontent += self.pack(item.fire, 4)#火属性
+		datacontent += self.pack(item.water, 4)#水属性
+		datacontent += self.pack(item.wind, 4)#風属性
+		datacontent += self.pack(item.earth, 4)#地属性
+		datacontent += self.pack(item.light, 4)#光属性
+		datacontent += self.pack(item.dark, 4)#闇属性
+		datacontent += self.pack(item.poison, 4)#毒（+なら毒回復、−なら毒状態に
+		datacontent += self.pack(item.stone, 4)#石化
+		datacontent += self.pack(item.paralyze, 4)#麻痺
+		datacontent += self.pack(item.sleep, 4)#睡眠
+		datacontent += self.pack(item.silence, 4)#沈黙
+		datacontent += self.pack(item.slow, 4)#鈍足
+		datacontent += self.pack(item.confuse, 4)#混乱
+		datacontent += self.pack(item.freeze, 4)#凍結
+		datacontent += self.pack(item.stan, 4)#気絶
 		datacontent += "0000"#ペットステ（攻撃速度
 		datacontent += "0000"#ペットステ（詠唱速度
 		datacontent += "0000"#ペットステ？（スタミナ回復力？
-		datacontent += self.pack(item.Price, 8)#ゴーレム露店の買取価格
+		datacontent += self.pack(item.price, 8)#ゴーレム露店の買取価格
 		datacontent += "0000"#ゴーレム露店の買取個数
-		datacontent += self.pack(item.Price, 8)#商人露店の販売価格
+		datacontent += self.pack(item.price, 8)#商人露店の販売価格
 		datacontent += "0000"#商人露店の販売個数
 		datacontent += "00000000"#何かの価格？ 商人露店の買取価格の予約？
 		datacontent += "0000"#何かの個数？
@@ -356,12 +406,12 @@ class CreatePacket:
 		datacontent += "00000003"+"0000001e"#ep+maxep
 		datacontent += "0009"#不明
 		datacontent += "08"#ステータス数#常に0x08
-		datacontent += self.pack(pc.Str, 4)#str
-		datacontent += self.pack(pc.Dex, 4)#dex
-		datacontent += self.pack(pc.Int, 4)#int
-		datacontent += self.pack(pc.Vit, 4)#vit
-		datacontent += self.pack(pc.Agi, 4)#agi
-		datacontent += self.pack(pc.Mag, 4)#mag
+		datacontent += self.pack(pc.str, 4)#str
+		datacontent += self.pack(pc.dex, 4)#dex
+		datacontent += self.pack(pc.int, 4)#int
+		datacontent += self.pack(pc.vit, 4)#vit
+		datacontent += self.pack(pc.agi, 4)#agi
+		datacontent += self.pack(pc.mag, 4)#mag
 		datacontent += "0000"#luk
 		datacontent += "0000"#cha
 		datacontent += "14"#equip_len？
@@ -439,21 +489,21 @@ class CreatePacket:
 		"""ステータス・補正・ボーナスポイント"""
 		datatype = "0212"#ステータス・補正・ボーナスポイント
 		datacontent = "08"#base
-		datacontent += self.pack(pc.Str, 4)#str
-		datacontent += self.pack(pc.Dex, 4)#dex
-		datacontent += self.pack(pc.Int, 4)#int
-		datacontent += self.pack(pc.Vit, 4)#vit
-		datacontent += self.pack(pc.Agi, 4)#agi
-		datacontent += self.pack(pc.Mag, 4)#mag
+		datacontent += self.pack(pc.str, 4)#str
+		datacontent += self.pack(pc.dex, 4)#dex
+		datacontent += self.pack(pc.int, 4)#int
+		datacontent += self.pack(pc.vit, 4)#vit
+		datacontent += self.pack(pc.agi, 4)#agi
+		datacontent += self.pack(pc.mag, 4)#mag
 		datacontent += "0000"#luk
 		datacontent += "0000"#cha
 		datacontent += "08"#revise
-		datacontent += self.pack(pc.Stradd, 4)#str
-		datacontent += self.pack(pc.Dexadd, 4)#dex
-		datacontent += self.pack(pc.Intadd, 4)#int
-		datacontent += self.pack(pc.Vitadd, 4)#vit
-		datacontent += self.pack(pc.Agiadd, 4)#agi
-		datacontent += self.pack(pc.Magadd, 4)#mag
+		datacontent += self.pack(pc.stradd, 4)#str
+		datacontent += self.pack(pc.dexadd, 4)#dex
+		datacontent += self.pack(pc.intadd, 4)#int
+		datacontent += self.pack(pc.vitadd, 4)#vit
+		datacontent += self.pack(pc.agiadd, 4)#agi
+		datacontent += self.pack(pc.magadd, 4)#mag
 		datacontent += "0000"#luk
 		datacontent += "0000"#cha
 		datacontent += "08"#bounus
@@ -570,7 +620,7 @@ class CreatePacket:
 			if not s:
 				datacontent += self.pack(1, 2) #習得Lv #暫くlv1に固定
 			else:
-				datacontent += self.pack(s.MaxLv, 2) #習得Lv #暫くmaxlvに固定
+				datacontent += self.pack(s.maxlv, 2) #習得Lv #暫くmaxlvに固定
 		datacontent += self.pack(skillcount, 2) #不明
 		for i in xrange(skillcount):
 			datacontent += self.pack(0, 2) #不明
@@ -621,130 +671,81 @@ class CreatePacket:
 		datacontent += "0d"#装備の数(常に0x0D)#13
 		item = pc.item.get(pc.equip.head)
 		#頭
-		if item != None and item.Type == "HELM":
-			datacontent += self.pack(pc.item[pc.equip.head].Id, 8)
+		if item != None and item.type == "HELM":
+			datacontent += self.pack(pc.item[pc.equip.head].id, 8)
 		else:
 			datacontent += "00000000"
 		#頭アクセサリ
-		if item != None and item.Type == "ACCESORY_HEAD":
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type == "ACCESORY_HEAD":
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		item = pc.item.get(pc.equip.face)
 		#顔
-		if item != None and item.Type == "FULLFACE":
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type == "FULLFACE":
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		#顔アクセサリ
-		if item != None and item.Type == "ACCESORY_FACE":
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type == "ACCESORY_FACE":
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		item = pc.item.get(pc.equip.chestacce)
 		#胸アクセサリ
-		typelist = list()
-		typelist.append("ACCESORY_NECK")
-		typelist.append("JOINT_SYMBOL")
-		if item != None and item.Type in typelist:
-				datacontent += self.pack(item.Id, 8)
+		if item != None and item.type in ACCESORY_TYPE_LIST:
+				datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		item = pc.item.get(pc.equip.tops)
 		#上半身+下半身
-		typelist = list()
-		typelist.append("ARMOR_UPPER")
-		typelist.append("ONEPIECE")
-		typelist.append("COSTUME")
-		typelist.append("BODYSUIT")
-		typelist.append("WEDDING")
-		typelist.append("OVERALLS")
-		typelist.append("FACEBODYSUIT")
-		typelist_add = list()
-		typelist_add.append("ARMOR_LOWER")
-		typelist_add.append("SLACKS")
-		if item != None and item.Type == "ONEPIECE":
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type == "ONEPIECE":
+			datacontent += self.pack(item.id, 8)
 			datacontent += "00000000"
 		else:
-			if item != None and item.Type in typelist:
-				datacontent += self.pack(item.Id, 8)
+			if item != None and item.type in UPPER_TYPE_LIST:
+				datacontent += self.pack(item.id, 8)
 			else:
 				datacontent += "00000000"
 			item = pc.item.get(pc.equip.bottoms)
-			if item != None and item.Type in typelist_add:
-				datacontent += self.pack(item.Id, 8)
+			if item != None and item.type in LOWER_TYPE_LIST:
+				datacontent += self.pack(item.id, 8)
 			else:
 				datacontent += "00000000"
 		#背中
 		item = pc.item.get(pc.equip.backpack)
-		if item != None and item.Type == "BACKPACK":
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type == "BACKPACK":
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		#右手装備
-		typelist = list()
-		typelist.append("CLAW")
-		typelist.append("HAMMER")
-		typelist.append("STAFF")
-		typelist.append("SWORD")
-		typelist.append("AXE")
-		typelist.append("SPEAR")
-		typelist.append("HANDBAG")
-		typelist.append("GUN")
-		typelist.append("ETC_WEAPON")
-		typelist.append("SHORT_SWORD")
-		typelist.append("RAPIER")
-		typelist.append("BOOK")
-		typelist.append("DUALGUN")
-		typelist.append("RIFLE")
-		typelist.append("THROW")
-		typelist.append("ROPE")
-		typelist.append("BULLET")
-		typelist.append("ARROW")
 		item = pc.item.get(pc.equip.right)
-		if item != None and item.Type in typelist:
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type in RIGHT_TYPE_LIST:
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		#左手装備
-		typelist = list()
-		typelist.append("BOW")
-		typelist.append("SHIELD")
-		typelist.append("LEFT_HANDBAG")
-		typelist.append("ACCESORY_FINGER")
-		typelist.append("STRINGS")
 		item = pc.item.get(pc.equip.left)
-		if item != None and item.Type in typelist:
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type in LEFT_TYPE_LIST:
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		#靴
-		typelist = list()
-		typelist.append("LONGBOOTS")
-		typelist.append("BOOTS")
-		typelist.append("SHOES")
-		typelist.append("HALFBOOTS")
 		item = pc.item.get(pc.equip.shoes)
-		if item != None and item.Type in typelist:
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type in BOOTS_TYPE_LIST:
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		#靴下
 		item = pc.item.get(pc.equip.socks)
-		if item != None and item.Type == "SOCKS":
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type == "SOCKS":
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		#ペット
-		typelist = list()
-		typelist.append("BACK_DEMON")
-		typelist.append("PET")
-		typelist.append("RIDE_PET")
-		typelist.append("PET_NEKOMATA")
 		item = pc.item.get(pc.equip.pet)
-		if item != None and item.Type in typelist:
-			datacontent += self.pack(item.Id, 8)
+		if item != None and item.type in PET_TYPE_LIST:
+			datacontent += self.pack(item.id, 8)
 		else:
 			datacontent += "00000000"
 		datacontent += "03"+"000000"#左手モーションタイプ size=3 { 片手, 両手, 攻撃}
@@ -1453,4 +1454,3 @@ class CreatePacket:
 				datacontent += "00000011" #数字の色 #HP回復
 		datacontent += self.pack(skilllv, 2)
 		return datatype, datacontent
-	

@@ -26,7 +26,7 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
@@ -40,24 +40,25 @@ from Object import eventobj
 from Object.itemobj import Item
 from Handle.eventhandle import EventHandle
 from Handle.attackhandle import AttackHandle
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
-class PacketHandle_Map:
+import traceback
+PACKET_NOT_PRINT = ["0032", #ping
+				"0fa5", #battle status change
+				"11f8", #move
+				"0f9f", #attack
+				]
+
+class PacketHandle_Map(DataAccessControl):
 	def __init__(self):
-		self.dolist = list(set(map(self.rm, dir(self))))
+		self.add("dolist", list(set(map(self.rm, dir(self)))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.sysenc = sys.getfilesystemencoding()
+		self.add("sysenc", sys.getfilesystemencoding())
+		self.add("returntype", None)
+		self.add("returndata", None)
 	
 	def rm(self, s):
 		if s[:3] == "do_":
@@ -72,19 +73,19 @@ class PacketHandle_Map:
 			else:
 				print "[ map ]", "recv", s, "packet type didn't define"
 		except:
-			print "[ map ]", "error in do /", exceptinfo()
+			print "[ map ]", "error in do /", traceback.format_exc()
 	
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.encode = self.cryptio.encode
-		self.decode = self.cryptio.decode
-		self.pack = self.netio.pack
-		self.send = self.netio.send
-		self.sendmap = self.netio.sendmap
-		self.sendmapwithoutself = self.netio.sendmapwithoutself
-		self.sendserver = self.netio.sendserver
-		self.event = eventobj.Event()
+		self.add("encode", self.cryptio.encode)
+		self.add("decode", self.cryptio.decode)
+		self.add("pack", self.netio.pack)
+		self.add("send", self.netio.send)
+		self.add("sendmap", self.netio.sendmap)
+		self.add("sendmapwithoutself", self.netio.sendmapwithoutself)
+		self.add("sendserver", self.netio.sendserver)
+		self.add("event", eventobj.Event())
 		self.event.id = 00000000
 		self.event.pclist = self.pclist
 		self.event.moblist = self.moblist
@@ -105,11 +106,6 @@ class PacketHandle_Map:
 		self.event.createpacket = self.createpacket
 		self.event.serverobj = self.serverobj
 		self.event.eventhandle = self.eventhandle
-		self.passtype = list()
-		self.passtype.append("0032")#ping
-		self.passtype.append("0fa5")#battle status change
-		self.passtype.append("11f8")#move
-		self.passtype.append("0f9f")#attack
 
 	def packet_handle(self, data, datalength, pc):
 		try:
@@ -123,7 +119,7 @@ class PacketHandle_Map:
 			recvcontent = recvcontent[:tmp_datalength]
 			if tmp_datacheck != "":
 				self.packet_handle(tmp_dataadd,None,pc)
-			if recvtype not in self.passtype:
+			if recvtype not in PACKET_NOT_PRINT:
 				#print datalength
 				print "[ map ]", recvhead, recvtype, recvcontent
 		#datahead = (len(datatype)+len(datacontent)) / 2
@@ -131,7 +127,7 @@ class PacketHandle_Map:
 			self.returntype, self.returndata = None, None
 			self.do(recvtype, pc, data, datalength, recvhead, recvtype, recvcontent)
 		except:
-			print "[ map ]", "error in packet_handle /", exceptinfo()
+			print "[ map ]", "error in packet_handle /", traceback.format_exc()
 			self.returntype = None
 			self.returndata = None
 		return self.returntype, self.returndata
@@ -215,18 +211,18 @@ class PacketHandle_Map:
 			x = int(x)
 			item = pc.item.get(x)
 			part = 02
-			if item.Type != "NONE":
+			if item.type != "NONE":
 				if x != 0 and x == pc.equip.head:
-					if item.Type == "HELM":
+					if item.type == "HELM":
 						part = 6
-					elif item.Type == "ACCESORY_HEAD":
+					elif item.type == "ACCESORY_HEAD":
 						part = 7
 					else:
 						continue
 				elif x != 0 and x == pc.equip.face:
-					if item.Type == "FULLFACE":
+					if item.type == "FULLFACE":
 						part = 6 #8 before ver315
-					elif item.Type == "ACCESORY_FACE":
+					elif item.type == "ACCESORY_FACE":
 						part = 8 #9 before ver315
 					else:
 						continue
@@ -234,7 +230,7 @@ class PacketHandle_Map:
 					part = 10
 				elif x != 0 and x == pc.equip.tops:
 					part = 11
-					#if item.Type == "ONEPIECE":
+					#if item.type == "ONEPIECE":
 					#	part_copy = 12
 				elif x != 0 and x == pc.equip.bottoms:
 					part = 12
@@ -454,7 +450,7 @@ class PacketHandle_Map:
 		item = pc.item.get(iid)
 		if not item:
 			return
-		if not item.EventID or item.EventID == 0:
+		if not item.eventid or item.eventid == 0:
 			return
 		def startevent(rpc, eventid):
 			rpc.reset_attack_info()
@@ -463,14 +459,14 @@ class PacketHandle_Map:
 			print "[ map ]", "item event", rpc.e.id, "start"
 			self.eventhandle.run(rpc)
 		if pc.sid == target:
-			startevent(pc, item.EventID)
+			startevent(pc, item.eventid)
 			return
 		for p in self.pclist.itervalues():
 			if not p.online:
 				continue
 			if int(p.sid) != target:
 				continue
-			startevent(p, item.EventID)
+			startevent(p, item.eventid)
 			break
 	
 	def do_03e8(self, pc, data, datalength, recvhead, recvtype, recvcontent):
@@ -528,13 +524,13 @@ class PacketHandle_Map:
 			print "[ map ]", "item move", iid
 			#アイテム保管場所変更
 			datatype,datacontent = self.createpacket.create09e3(iid,part)
-			self.send(datatype,datacontent,pc.mapclient,None)
-			if iid in pc.equiplist(pc):
+			self.send(datatype, datacontent, pc.mapclient,None)
+			if iid in pc.equiplist():
 				#装備を外す時の処理
-				pc.unsetequip(pc,iid)
+				pc.unsetequip(iid)
 				pc.sort.item.remove(iid)
 				pc.sort.item.append(iid)
-				print "[ map ]", "unset pc equip", pc.item[iid].Id
+				print "[ map ]", "unset pc equip", pc.item[iid].id
 				#アイテム装備
 				datatype,datacontent = self.createpacket.create09e8(-1, -1, 1, 1)
 				self.send(datatype, datacontent, pc.mapclient, None)
@@ -549,8 +545,8 @@ class PacketHandle_Map:
 		if pc.item.get(iid) == None:
 			print "[ map ]", "error on item setup", iid
 		else:
-			old, new = pc.setequip(pc, iid, self.itemobj, self.itemdic)
-			print "[ map ]", "item setup", pc.item[iid].Id, old, new
+			old, new = pc.setequip(iid, self.itemobj, self.itemdic)
+			print "[ map ]", "item setup", pc.item[iid].id, old, new
 			if int(new) == 0:
 				#装備しようとする装備タイプが不明の場合
 				#アイテム装備
@@ -596,8 +592,8 @@ class PacketHandle_Map:
 		#pc.map = str(pc.map)
 		mapinfo = self.mapdic.get(int(pc.map))
 		if mapinfo != None:
-			centerx = mapinfo.Centerx
-			centery = mapinfo.Centery
+			centerx = mapinfo.centerx
+			centery = mapinfo.centery
 		else:
 			centerx,centery = 128,128
 		cachex = int(float(centerx)+(cachex/100.0))
@@ -654,11 +650,11 @@ class PacketHandle_Map:
 		for x in range(0, len(itemlist)):
 			buyid = itemlist[x]
 			buycount = countlist[x]
-			item = eventobj.createitem(pc,buyid)
-			if int(item.Price) < 1:
+			item = eventobj.createitem(pc, buyid)
+			if int(item.price) < 1:
 				price = 1
 			else:
-				price = item.Price
+				price = item.price
 			goldtake = int(price) * int(buycount)
 			totalgoldtake = totalgoldtake+goldtake
 			totalbuylist.append((buyid, buycount))
@@ -680,7 +676,7 @@ class PacketHandle_Map:
 			#datatype,datacontent = self.createpacket.create0a1c(pc)
 			#self.send(datatype, datacontent, pc.mapclient, None)
 		pc.isnpctrade = False
-		pc.tradelist = None
+		pc.tradelist = []
 		pc.tradestate = 0
 		#トレード終了通知
 		datatype,datacontent = self.createpacket.create0a1c(pc)
@@ -697,13 +693,13 @@ class PacketHandle_Map:
 		pc.tradestate = 1
 		tradereturnlist = list()
 		if pc.isnpctrade:
-			if pc.tradelist != None:
+			if pc.tradelist:
 				pc.e = copy.copy(self.event)
 				for x in pc.tradelist:
 					tradereturnlist.append(eventobj.takeitembyiid(pc,x[0],x[1]))
 		pc.tradereturnlist = tradereturnlist
 		pc.isnpctrade = False
-		pc.tradelist = None
+		pc.tradelist = []
 		pc.tradestate = 0
 		#トレード終了通知
 		datatype,datacontent = self.createpacket.create0a1c(pc)
@@ -763,7 +759,7 @@ class PacketHandle_Map:
 		for i, c in selllist:
 			item = eventobj.takeitembyiid(pc, i, c)
 			if item:
-				income = income + int(int(item.Price) * int(item.Count) / 10)
+				income = income + int(int(item.price) * int(item.count) / 10)
 		income = int(income)
 		eventobj.givegold(pc, income)
 
@@ -787,15 +783,15 @@ class PacketHandle_Map:
 			datatype,datacontent = self.createpacket.create09fc(-2)
 			self.send(datatype, datacontent, pc.mapclient, None)
 			raise ValueError, "not pc.warehouse.get(iid)"
-		if int(pc.warehouse[iid].Count) < int(count):
+		if int(pc.warehouse[iid].count) < int(count):
 			#倉庫から取り出した時の結果#指定された数量が不正です
 			datatype,datacontent = self.createpacket.create09fc(-3)
 			self.send(datatype, datacontent, pc.mapclient, None)
-			raise ValueError, "int(pc.warehouse[iid].Count) < int(count)"
+			raise ValueError, "int(pc.warehouse[iid].count) < int(count)"
 		pc.e = copy.copy(self.event)
 		item = eventobj.takeitembyiid(pc, iid, count, fromwarehouse=True)
 		if item:
-			eventobj.giveitem(pc, item.Id, item.Count, fromwarehouse=True)
+			eventobj.giveitem(pc, item.id, item.count, fromwarehouse=True)
 			#倉庫から取り出した時の結果#成功
 			datatype,datacontent = self.createpacket.create09fc(0)
 			self.send(datatype, datacontent, pc.mapclient, None)
@@ -815,15 +811,15 @@ class PacketHandle_Map:
 			datatype,datacontent = self.createpacket.create09fe(-2)
 			self.send(datatype, datacontent, pc.mapclient, None)
 			raise ValueError, "not pc.item.get(iid)"
-		if int(pc.item[iid].Count) < int(count):
+		if int(pc.item[iid].count) < int(count):
 			#倉庫に預けた時の結果#指定された数量が不正です
 			datatype,datacontent = self.createpacket.create09fe(-3)
 			self.send(datatype, datacontent, pc.mapclient, None)
-			raise ValueError, "int(pc.item[iid].Count) < int(count)"
+			raise ValueError, "int(pc.item[iid].count) < int(count)"
 		pc.e = copy.copy(self.event)
 		item = eventobj.takeitembyiid(pc, iid, count)
 		if item:
-			eventobj.giveitem(pc, item.Id, item.Count, towarehouse=pc.warehouse_open)
+			eventobj.giveitem(pc, item.id, item.count, towarehouse=pc.warehouse_open)
 			#倉庫に預けた時の結果#成功
 			datatype,datacontent = self.createpacket.create09fe(0)
 			self.send(datatype, datacontent, pc.mapclient, None)
@@ -868,7 +864,7 @@ class PacketHandle_Map:
 			return
 		skill = self.skilldic.get(skillid)
 		if skill:
-			skillname = str(skill.Name)
+			skillname = str(name.name)
 		else:
 			skillname = "Unknow"
 		#スキル使用通知
@@ -881,19 +877,3 @@ class PacketHandle_Map:
 		datatype, datacontent = self.createpacket.create138a(pc, 13)
 		self.send(datatype, datacontent, pc.mapclient, None)
 		eventobj.systemmessage(pc, "スキル["+skillname+"]は未実装です")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

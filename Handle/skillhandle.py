@@ -26,39 +26,33 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import sys
 import os
 import time
 import thread
 from Object import eventobj
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
-class SkillHandle:
+import traceback
+
+class SkillHandle(DataAccessControl):
 	def __init__(self):
-		self.dolist = list(set(map(self.rm, dir(self))))
+		self.add("dolist", list(set(map(self.rm, dir(self)))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.sysenc = sys.getfilesystemencoding()
+		self.add("sysenc", sys.getfilesystemencoding())
 	
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.except_count = 0
-		self.send = self.netio.send
-		self.sendmap = self.netio.sendmap
-		self.sendmapwithoutself = self.netio.sendmapwithoutself
-		self.sendserver = self.netio.sendserver
+		self.add("except_count", 0)
+		self.add("send", self.netio.send)
+		self.add("sendmap", self.netio.sendmap)
+		self.add("sendmapwithoutself", self.netio.sendmapwithoutself)
+		self.add("sendserver", self.netio.sendserver)
 		#self.oldtime = time.time()
 	
 	def rm(self, s):
@@ -76,7 +70,7 @@ class SkillHandle:
 			else:
 				return False
 		except:
-			print "[skill]", "error in do /", exceptinfo()
+			print "[skill]", "error in do /", traceback.format_exc()
 	
 	def run(self, *args):
 		try:
@@ -84,7 +78,7 @@ class SkillHandle:
 			print "[skill]", "run %s" % (s, )
 			thread.start_new_thread(self.do, args)
 		except:
-			print "[skill]", "error in run /", exceptinfo()
+			print "[skill]", "error in run /", traceback.format_exc()
 		
 	def do_10100(self, pc, skillid, targetsid, targetx, targety, skilllv):
 		"""受け取れ
@@ -131,10 +125,3 @@ class SkillHandle:
 		datatype,datacontent = self.createpacket.create0fa6(pc, 1)
 		self.sendmap(datatype, datacontent, self.pclist, pc, None)
 		eventobj.systemmessage(pc, "スキル[ヒーリング]は完全に実装されていません")
-	
-	
-	
-	
-	
-	
-	

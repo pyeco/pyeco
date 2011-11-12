@@ -26,24 +26,18 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import sys
 import os
 import time
 import thread
 from Object.eventobj import *
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
-class EventHandle:
+import traceback
+
+class EventHandle(DataAccessControl):
 	def __init__(self):
-		self.scriptdic = {}
-		self.removelist = list()
+		self.add("scriptdic", {})
+		self.add("removelist", [])
 	
 	def loadscript(self, scriptpath):
 		scriptfilelist = []
@@ -59,9 +53,9 @@ class EventHandle:
 					scriptfilelist.append(path)
 		for scriptfile in scriptfilelist:
 			try:
-				f = open(scriptfile, "r")
+				f = open(scriptfile, "rb")
 				code = f.read().replace("\r\n", "\n").replace("\r", "\n")
-				execobj = compile(code, "", "exec")
+				execobj = compile(code+"\n", "", "exec")
 				f.close()
 				namespace_tmp = {}
 				scriptclass_tmp = None
@@ -75,7 +69,7 @@ class EventHandle:
 					#self.scriptdic[eventid] = namespace_tmp["Script"]()
 					#self.scriptdic[eventid].get_id() #init
 			except:
-				print "[ all ]", "script load error [%s]\n" % (scriptfile, ), exceptinfo()
+				print "[ all ]", "script load error [%s]\n" % (scriptfile, ), traceback.format_exc()
 				continue
 	
 	"""def loadscript_old(self, scriptpath):
@@ -124,7 +118,7 @@ class EventHandle:
 				try:
 					exec("import "+x)
 				except:
-					print "\n[ all ]","script reload error [", filename, "]", exceptinfo(),
+					print "\n[ all ]","script reload error [", filename, "]", traceback.format_exc(),
 					loaderror = True
 			if loaderror:
 				continue
@@ -162,7 +156,7 @@ class EventHandle:
 				#exec("self.event_"+pc.e.id+".main(pc)")
 				eventobj.main(pc)
 			except:
-				print"[ map ]", "script error", exceptinfo()
+				print"[ map ]", "script error", traceback.format_exc()
 		else:
 			print "[ map ]", "event", pc.e.id, "not found"
 			say(pc, "未実装$RID %s"%(pc.e.id, ), "", 0)

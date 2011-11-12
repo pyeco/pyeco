@@ -26,19 +26,12 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
+from Object import eventobj
 import sys
 import os
-sys.path.append(os.getcwd() + "/Object")
-from Object import eventobj
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
+import traceback
+
 def splitcommand(openchattext):
 	inputtext = str(openchattext).split(" ")
 	while True:
@@ -91,16 +84,16 @@ def simplehandle(pc, openchattext, commandstr, commandhint=None, errormessage=No
 	
 	
 	
-class Command:
+class Command(DataAccessControl):
 	def __init__(self):
-		self.dolist = list(set(map(self.rm, dir(self))))
+		self.add("dolist", list(set(map(self.rm, dir(self)))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.sysenc = sys.getfilesystemencoding()
+		self.add("sysenc", sys.getfilesystemencoding())
 	
 	def rm(self, s):
 		if s[:3] == "do_":
@@ -116,7 +109,7 @@ class Command:
 			else:
 				return False
 		except:
-			print "[ cmd ]", "error in do /", exceptinfo()
+			print "[ cmd ]", "error in do /", traceback.format_exc()
 			return False
 	
 	def run(self, pc, openchattext):
@@ -129,7 +122,7 @@ class Command:
 				commandtype = "1"+commandtype[1:] #replace / to 1
 			iscommand = self.do(commandtype, pc, openchattext)
 		except:
-			print "[ cmd ]", "error in run /", exceptinfo()
+			print "[ cmd ]", "error in run /", traceback.format_exc()
 			iscommand = False
 		return iscommand
 	
@@ -213,8 +206,8 @@ class Command:
 				else:
 					mapinfo = pc.e.mapdic.get(int(mapid))
 					if mapinfo != None:
-						x = int(mapinfo.Centerx)
-						y = int(mapinfo.Centery)
+						x = int(mapinfo.centerx)
+						y = int(mapinfo.centery)
 					else:
 						x, y = 128, 128
 					print "[ map ]", "warpraw -> warp command", mapid, x, y
@@ -233,8 +226,8 @@ class Command:
 				else:
 					mapinfo = pc.e.mapdic.get(int(mapid))
 					if mapinfo != None:
-						x = int(mapinfo.Centerx)
-						y = int(mapinfo.Centery)
+						x = int(mapinfo.centerx)
+						y = int(mapinfo.centery)
 					else:
 						x, y = 128, 128
 				print "[ map ]", "warp command", mapid, x, y
@@ -250,7 +243,7 @@ class Command:
 					count += 1
 					mapinfo = pc.e.mapdic.get(int(p.map))
 					if mapinfo != None:
-						mapname = mapinfo.Name
+						mapname = mapinfo.name
 					else:
 						mapname = str(p.map)
 					pcname = str(p.name)
@@ -282,16 +275,16 @@ class Command:
 		arg = simplehandle(pc, openchattext, "printitem")
 		if arg:
 			itemlist = pc.sort.item
-			equiplist = pc.equiplist(pc)
+			equiplist = pc.equiplist()
 			for x in itemlist:
 				x = int(x)
 				if x == 0:
 					continue
 				if x in equiplist:
 					continue
-				msg = "printitem %s %s" % (pc.item[x].Id, \
-					str(pc.item[x].Name).decode("utf-8").encode(self.sysenc))
-				msgforeco = "printitem "+str(pc.item[x].Id)+" "+str(pc.item[x].Name)
+				msg = "printitem %s %s" % (pc.item[x].id, \
+					str(pc.item[x].name).decode("utf-8").encode(self.sysenc))
+				msgforeco = "printitem "+str(pc.item[x].id)+" "+str(pc.item[x].name)
 				print "[ map ]", msg
 				eventobj.systemmessage(pc, msgforeco)
 	
@@ -300,7 +293,7 @@ class Command:
 		if arg:
 			mapinfo = pc.e.mapdic.get(int(pc.map))
 			if mapinfo != None:
-				mapname = mapinfo.Name
+				mapname = mapinfo.name
 			else:
 				mapname = str(pc.map)
 			eventobj.systemmessage(pc, "%s [%s] (%s, %s) r(%s, %s)"%(mapname, \
@@ -361,13 +354,13 @@ class Command:
 		arg = simplehandle(pc, openchattext, "hair", "!hair hair_id", "hair id not a number")
 		if arg:
 			pc.hair = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0haircolor(self, pc, openchattext):
 		arg = simplehandle(pc, openchattext, "hc", "!hc haircolor_id", "haircolor id not a number")
 		if arg:
 			pc.haircolor = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0hc(self, pc, openchattext):
 		self.do_0haircolor(pc, openchattext)
@@ -376,31 +369,31 @@ class Command:
 		arg = simplehandle(pc, openchattext, "face", "!face face_id", "face id not a number")
 		if arg:
 			pc.face = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0wig(self, pc, openchattext):
 		arg = simplehandle(pc, openchattext, "wig", "!wig wig_id", "wig id not a number")
 		if arg:
 			pc.wig = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0ex(self, pc, openchattext):
 		arg = simplehandle(pc, openchattext, "ex", "!ex ex_id", "ex id not a number")
 		if arg:
 			pc.ex = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0wing(self, pc, openchattext):
 		arg = simplehandle(pc, openchattext, "wing", "!wing wing_id", "wing id not a number")
 		if arg:
 			pc.wing = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0wingcolor(self, pc, openchattext):
 		arg = simplehandle(pc, openchattext, "wc", "!wc wingcolor_id", "wingcolor id not a number")
 		if arg:
 			pc.wingcolor = int(arg)
-			eventobj.updatepc(pc)
+			#eventobj.updatepc(pc)
 	
 	def do_0wc(self, pc, openchattext):
 		self.do_0wingcolor(pc, openchattext)

@@ -26,25 +26,23 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-from __future__ import division
+from DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
 import rijndael
 from cryptio import CryptIO
 import traceback
-exceptinfo = traceback.format_exc
 
-class NetIO:
+class NetIO(DataAccessControl):
 	def init(self, cryptio):
-		self.cryptio = cryptio
-		self.encode = self.cryptio.encode
-		self.decode = self.cryptio.decode
+		self.add("cryptio", cryptio)
+		self.add("encode", self.cryptio.encode)
+		self.add("decode", self.cryptio.decode)
 	
 	def calc_data_head(self, datatype, datacontent):
 		try:
-			datahead = (len(datatype)+len(datacontent))/2
+			datahead = (len(datatype)+len(datacontent))/2.0
 			datahead = hex(int(datahead))
 			if len(datahead) < 3:
 				print "error on clac_data_head: data too short"
@@ -57,7 +55,7 @@ class NetIO:
 			#while len(datahead) < 4:
 			#	datahead = "0"+datahead
 		except Exception:
-			print "[netio]","error on calc_data_head /", exceptinfo()
+			print "[netio]","error on calc_data_head /", traceback.format_exc()
 			datahead = "0000"
 		return datahead
 	
@@ -67,10 +65,10 @@ class NetIO:
 			if string == "":
 				return "0100"
 			string = string.encode("hex")+"00"
-			stringhead = self.pack(int(len(string) / 2), 2)
+			stringhead = self.pack(len(string)/2, 2)
 			result = stringhead+string
 		except Exception:
-			print "[netio]","error on packstr /", exceptinfo()
+			print "[netio]","error on packstr /", traceback.format_exc()
 			result = "0100"
 		return result
 	
@@ -106,7 +104,7 @@ class NetIO:
 				else:
 					data = data.zfill(length) # data = "0"*(length-len(data)) + data
 		except Exception:
-			print "[netio]","error on pack /", exceptinfo()
+			print "[netio]","error on pack /", traceback.format_exc()
 			data = "00"
 		return data
 	
@@ -121,7 +119,7 @@ class NetIO:
 			else:
 				client.transport.write(rawdata)
 		except Exception:
-			print "[netio]","error on send /", exceptinfo()
+			print "[netio]","error on send /", traceback.format_exc()
 	
 	def sendmap(self, datatype, datacontent, pclist, pc, datalength=None, fast=False):
 		try:
@@ -130,7 +128,7 @@ class NetIO:
 					if p.map == pc.map:
 						self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
-			print "[netio]","error on sendmap /", exceptinfo()
+			print "[netio]","error on sendmap /", traceback.format_exc()
 	
 	def sendmapwithoutself(self, datatype, datacontent, pclist, pc, datalength=None, fast=False):
 		try:
@@ -139,7 +137,7 @@ class NetIO:
 					if p.charid != pc.charid and p.map == pc.map:
 						self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
-			print "[netio]","error on sendmapwithoutself /", exceptinfo()
+			print "[netio]","error on sendmapwithoutself /", traceback.format_exc()
 	
 	def sendserver(self, datatype, datacontent, pclist, pc, datalength=None, fast=False):
 		try:
@@ -147,4 +145,6 @@ class NetIO:
 				if p.online:
 					self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
-			print "[netio]","error on sendserver /", exceptinfo()
+			print "[netio]","error on sendserver /", traceback.format_exc()
+
+

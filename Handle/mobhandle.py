@@ -26,27 +26,21 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import os
 import sys
 import time
 import thread
 import random
 from Object.eventobj import *
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
-class MobHandle:
+import traceback
+
+class MobHandle(DataAccessControl):
 	def __init__(self, serverobj):
 		"""__init__"""
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.except_count = 0
+		self.add("except_count", 0)
 	
 	def get_new_point(self, mob, tox=None, toy=None, minx=-1, maxx=1, miny=-1, maxy=1):
 		"""get new point"""
@@ -232,7 +226,7 @@ class MobHandle:
 				break
 			except:
 				self.except_count += 1
-				print "[ mob ]", "thread_mobhandle error", exceptinfo()
+				print "[ mob ]", "thread_mobhandle error", traceback.format_exc()
 				if self.except_count > 100:
 					print "[ all ]", "thread_mobhandle end / except_count > 100"
 					break

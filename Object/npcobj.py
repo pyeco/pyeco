@@ -26,11 +26,11 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import csv
 
-class Npc:
-	def getnpcdic(self,filename):
+class Npc(DataAccessControl):
+	def getnpcdic(self, filename):
 		npcdic={}
 		reader = csv.reader(file(filename, "rb"))
 		def intx(i):
@@ -48,12 +48,10 @@ class Npc:
 			except:
 				continue
 			npcdic[npcid]=Npc()
-			npcdic[npcid].Id = intx(row[0])
-			npcdic[npcid].Name = row[1]
+			npcdic[npcid].id = intx(row[0])
+			npcdic[npcid].name = row[1]
 		return npcdic
 
 	def __init__(self):
-		self.Id = None
-		self.Name = None
-
-
+		self.add("id", 0)
+		self.add("name", "")

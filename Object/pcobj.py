@@ -26,12 +26,14 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+from Socket.DataAccessControl import DataAccessControl
+from Object import eventobj
 import ConfigParser
 import sys
 import os
 import io
 import traceback
+import StringIO
 
 TYPE_TOPS = ["ARMOR_UPPER",
 			"ONEPIECE",
@@ -77,180 +79,451 @@ TYPE_PET = ["BACK_DEMON",
 			"RIDE_PET",
 			"PET_NEKOMATA",
 			]
+CALL_UPDATEPC_WHEN_CHANGE = ["name",
+						"race",
+						"form",
+						"gender",
+						"hair",
+						"haircolor",
+						"wig",
+						"face",
+						"base_lv",
+						"ex",
+						"wing",
+						"wingcolor",
+						#"motion",
+						"lv_base"]
 
-class PC:
-	def __init__(self):
+class PC(DataAccessControl):
+	def __init__(self, global_itemobj, global_itemdic):
 		self.pcinit()
-
-	"""def __setattr__(self, attr, value):
-		#print attr, value
-		self.__dict__[attr] = value
-		if self.__dict__.get("online") != True:
-			return
-		type_updatepc = ["hair", "haircolor", "wig"]
-		#import eventobj
-		if attr in type_updatepc:
-			eventobj.updatepc(self)"""
-
-	def setequip(self, pc, iid, itemobj, itemdic):
+		self.add("cfg", None) #ConfigParser.SafeConfigParser()
+		self.add("readhandle", None) #open(path, "rb")
+		self.add("writehandle", None) #open(path, "wb")
+		self.add("itemobj", global_itemobj)
+		self.add("itemdic", global_itemdic)
+	
+	def __setattr__(self, name, value):
+		DataAccessControl.__setattr__(self, name, value)
+		if name in CALL_UPDATEPC_WHEN_CHANGE and self.online and self.e:
+			#print "eventobj.updatepc(self)", name
+			eventobj.updatepc(self)
+	
+	def setequip(self, iid, itemobj, itemdic):
 		#print pc
 		iid = int(iid)
-		old = list()
+		old = [] #unset list
 		new = 0
-		item = pc.item.get(iid)
+		item = self.item.get(iid)
 		if item == None:
 			return old, new
 		#頭
-		if item.Type == "HELM":
-			if pc.equip.head != 0:
-				old.append(pc.equip.head)
-			pc.equip.head = iid
+		if item.type == "HELM":
+			if self.equip.head != 0:
+				old.append(self.equip.head)
+			self.equip.head = iid
 			new = 6
-		elif item.Type == "ACCESORY_HEAD":
-			if pc.equip.head != 0:
-				old.append(pc.equip.head)
-			pc.equip.head = iid
+		elif item.type == "ACCESORY_HEAD":
+			if self.equip.head != 0:
+				old.append(self.equip.head)
+			self.equip.head = iid
 			new = 7
 		#顔
-		elif item.Type == "FULLFACE":
-			if pc.equip.face != 0:
-				old.append(pc.equip.face)
-			pc.equip.face = iid
+		elif item.type == "FULLFACE":
+			if self.equip.face != 0:
+				old.append(self.equip.face)
+			self.equip.face = iid
 			new = 6 #8 before ver315
-		elif item.Type == "ACCESORY_FACE":
-			if pc.equip.face != 0:
-				old.append(pc.equip.face)
-			pc.equip.face = iid
+		elif item.type == "ACCESORY_FACE":
+			if self.equip.face != 0:
+				old.append(self.equip.face)
+			self.equip.face = iid
 			new = 8 #9 before ver315
 		#胸アクセサリ
-		elif item.Type == "ACCESORY_NECK" or  item.Type == "JOINT_SYMBOL":
-			if pc.equip.chestacce != 0:
-				old.append(pc.equip.chestacce)
-			pc.equip.chestacce = iid
+		elif item.type == "ACCESORY_NECK" or item.type == "JOINT_SYMBOL":
+			if self.equip.chestacce != 0:
+				old.append(self.equip.chestacce)
+			self.equip.chestacce = iid
 			new = 10
 		#上半身
-		elif item.Type in TYPE_TOPS:
-			if pc.equip.tops != 0:
-				old.append(pc.equip.tops)
-			if item.Type == "ONEPIECE" and pc.equip.bottoms != 0:
-				old.append(pc.equip.bottoms)
-				pc.equip.bottoms = 0
-			pc.equip.tops = iid
+		elif item.type in TYPE_TOPS:
+			if self.equip.tops != 0:
+				old.append(self.equip.tops)
+			if item.type == "ONEPIECE" and self.equip.bottoms != 0:
+				old.append(self.equip.bottoms)
+				self.equip.bottoms = 0
+			self.equip.tops = iid
 			new = 11
 		#下半身
-		elif item.Type == "ARMOR_LOWER" or item.Type == "SLACKS" :
-			if pc.equip.bottoms != 0:
-				old.append(pc.equip.bottoms)
-			if pc.equip.tops != 0:
-				cache = pc.item.get(pc.equip.tops)
-				if cache != None and cache.Type == "ONEPIECE":
-					old.append(pc.equip.tops)
-					pc.equip.tops = 0
-			pc.equip.bottoms = iid
+		elif item.type == "ARMOR_LOWER" or item.type == "SLACKS" :
+			if self.equip.bottoms != 0:
+				old.append(self.equip.bottoms)
+			if self.equip.tops != 0:
+				cache = self.item.get(self.equip.tops)
+				if cache != None and cache.type == "ONEPIECE":
+					old.append(self.equip.tops)
+					self.equip.tops = 0
+			self.equip.bottoms = iid
 			new = 12
 		#背中
-		elif item.Type == "BACKPACK":
-			if pc.equip.backpack != 0:
-				old.append(pc.equip.backpack)
-			pc.equip.backpack = iid
+		elif item.type == "BACKPACK":
+			if self.equip.backpack != 0:
+				old.append(self.equip.backpack)
+			self.equip.backpack = iid
 			new = 13
 		#右手装備
-		elif item.Type in TYPE_RIGHT:
-			if pc.equip.right != 0:
-				old.append(pc.equip.right)
-			pc.equip.right = iid
+		elif item.type in TYPE_RIGHT:
+			if self.equip.right != 0:
+				old.append(self.equip.right)
+			self.equip.right = iid
 			new = 14
 		#左手装備
-		elif item.Type in TYPE_LEFT:
-			if pc.equip.left != 0:
-				old.append(pc.equip.left)
-			pc.equip.left = iid
+		elif item.type in TYPE_LEFT:
+			if self.equip.left != 0:
+				old.append(self.equip.left)
+			self.equip.left = iid
 			new = 15
 		#靴
-		elif item.Type in TYPE_SHOES:
-			if pc.equip.shoes != 0:
-				old.append(pc.equip.shoes)
-			pc.equip.shoes = iid
+		elif item.type in TYPE_SHOES:
+			if self.equip.shoes != 0:
+				old.append(self.equip.shoes)
+			self.equip.shoes = iid
 			new = 16
 		#靴下
-		elif item.Type == "SOCKS":
-			if pc.equip.socks != 0:
-				old.append(pc.equip.socks)
-			pc.equip.socks = iid
+		elif item.type == "SOCKS":
+			if self.equip.socks != 0:
+				old.append(self.equip.socks)
+			self.equip.socks = iid
 			new = 17
 		#ペット
-		elif item.Type in TYPE_PET:
-			if pc.equip.pet != 0:
-				old.append(pc.equip.pet)
-			pc.equip.pet = iid
+		elif item.type in TYPE_PET:
+			if self.equip.pet != 0:
+				old.append(self.equip.pet)
+			self.equip.pet = iid
 			new = 18
-		return old,new
-
-	def unsetequip(self, pc, iid):
+		return old, new
+	
+	def unsetequip(self, iid):
 		#print pc
 		iid = int(iid)
 		if iid == 0:
 			return
-		elif pc.equip.head == iid:
-			pc.equip.head = 0
-		elif pc.equip.face == iid:
-			pc.equip.face = 0
-		elif pc.equip.chestacce == iid:
-			pc.equip.chestacce = 0
-		elif pc.equip.tops == iid:
-			pc.equip.tops = 0
-		elif pc.equip.bottoms == iid:
-			pc.equip.bottoms = 0
-		elif pc.equip.backpack == iid:
-			pc.equip.backpack = 0
-		elif pc.equip.right == iid:
-			pc.equip.right = 0
-		elif pc.equip.left == iid:
-			pc.equip.left = 0
-		elif pc.equip.shoes == iid:
-			pc.equip.shoes = 0
-		elif pc.equip.socks == iid:
-			pc.equip.socks = 0
-		elif pc.equip.pet == iid:
-			pc.equip.pet = 0
-
-	def equiplist(self, pc):
-		l = list()
-		if pc.equip.head !=  0:
-			l.append(pc.equip.head)
-		if pc.equip.face !=  0:
-			l.append(pc.equip.face)
-		if pc.equip.chestacce !=  0:
-			l.append(pc.equip.chestacce)
-		if pc.equip.tops !=  0:
-			l.append(pc.equip.tops)
-		if pc.equip.bottoms !=  0:
-			l.append(pc.equip.bottoms)
-		if pc.equip.backpack !=  0:
-			l.append(pc.equip.backpack)
-		if pc.equip.right !=  0:
-			l.append(pc.equip.right)
-		if pc.equip.left !=  0:
-			l.append(pc.equip.left)
-		if pc.equip.shoes !=  0:
-			l.append(pc.equip.shoes)
-		if pc.equip.socks !=  0:
-			l.append(pc.equip.socks)
-		if pc.equip.pet !=  0:
-			l.append(pc.equip.pet)
+		elif self.equip.head == iid:
+			self.equip.head = 0
+		elif self.equip.face == iid:
+			self.equip.face = 0
+		elif self.equip.chestacce == iid:
+			self.equip.chestacce = 0
+		elif self.equip.tops == iid:
+			self.equip.tops = 0
+		elif self.equip.bottoms == iid:
+			self.equip.bottoms = 0
+		elif self.equip.backpack == iid:
+			self.equip.backpack = 0
+		elif self.equip.right == iid:
+			self.equip.right = 0
+		elif self.equip.left == iid:
+			self.equip.left = 0
+		elif self.equip.shoes == iid:
+			self.equip.shoes = 0
+		elif self.equip.socks == iid:
+			self.equip.socks = 0
+		elif self.equip.pet == iid:
+			self.equip.pet = 0
+	
+	def equiplist(self):
+		l = []
+		if self.equip.head !=  0:
+			l.append(self.equip.head)
+		if self.equip.face !=  0:
+			l.append(self.equip.face)
+		if self.equip.chestacce !=  0:
+			l.append(self.equip.chestacce)
+		if self.equip.tops !=  0:
+			l.append(self.equip.tops)
+		if self.equip.bottoms !=  0:
+			l.append(self.equip.bottoms)
+		if self.equip.backpack !=  0:
+			l.append(self.equip.backpack)
+		if self.equip.right !=  0:
+			l.append(self.equip.right)
+		if self.equip.left !=  0:
+			l.append(self.equip.left)
+		if self.equip.shoes !=  0:
+			l.append(self.equip.shoes)
+		if self.equip.socks !=  0:
+			l.append(self.equip.socks)
+		if self.equip.pet !=  0:
+			l.append(self.equip.pet)
 		return l
-
-	def calcstatus(self,pc):
-		pc.status.minatk1 = (pc.Str + pc.Stradd + ( (pc.Str + pc.Stradd) / 9) ** 2 )
-		pc.status.minatk1 = pc.status.minatk1 * (1 + ( (pc.Dex + pc.Dexadd) * 1.5 ) / 160 )
-		pc.status.minatk2 = pc.status.minatk1
-		pc.status.minatk3 = pc.status.minatk1
-
+	
+	def calcstatus(self):
+		self.status.minatk1 = (self.str + self.stradd + ((self.str + self.stradd) / 9) ** 2)
+		self.status.minatk1 = self.status.minatk1 * (1 + ((self.dex + self.dexadd) * 1.5) / 160)
+		self.status.minatk2 = self.status.minatk1
+		self.status.minatk3 = self.status.minatk1
+	
+	def csv(self, var):
+		var = var.split(",")
+		while True:
+			try:
+				var.remove("")
+			except:
+				break
+		return var
+	
+	def loadallconfig(self, ConfigFileName):
+		self.readhandle = open("./%s"%ConfigFileName,"rb")
+		content = self.readhandle.read()
+		self.readhandle.close()
+		contentcopy = content
+		contenthead_typea = content[:2].encode("hex").upper()
+		contenthead_typeb = content[:3].encode("hex").upper()
+		if contenthead_typea == "FEFF": #if do not upper, use typea == "feff"
+			content = content[2:]
+		elif contenthead_typea == "FFFE":
+			content = content[2:]
+		elif contenthead_typeb == "EFBBBF":
+			content = content[3:]
+		if len(content) != len(contentcopy):
+			self.readhandle = open("./%s"%ConfigFileName, "wb")
+			self.readhandle.write(content)
+			self.readhandle.close()
+		self.readhandle.close()
+		
+		vmcfg = StringIO.StringIO(content.replace("\r\n", "\n"))
+		self.cfg = ConfigParser.SafeConfigParser()
+		self.cfg.readfp(vmcfg)
+		vmcfg.close()
+		
+		try:
+			self.charid = int(self.cfg.get("main","charid"))
+			self.sid = int(self.cfg.get("main","charid"))
+			self.name = self.cfg.get("main","name")
+			self.password = self.cfg.get("main","password")
+			self.delpassword = self.cfg.get("main","delpassword")
+			self.gmlevel = int(self.cfg.get("main","gmlevel"))
+			self.race = int(self.cfg.get("main","race"))
+			self.form = int(self.cfg.get("main","form"))
+			try:
+				self.gender = int(self.cfg.get("main","gender"))
+			except:
+				self.gender = int(self.cfg.get("main","sex"))
+			self.hair = int(self.cfg.get("main","hair"))
+			self.haircolor = int(self.cfg.get("main","haircolor"))
+			self.wig = int(self.cfg.get("main","wig"))
+			self.face = int(self.cfg.get("main","face"))
+			self.base_lv = int(self.cfg.get("main","base_lv"))
+			self.ex = int(self.cfg.get("main","ex"))
+			self.wing = int(self.cfg.get("main","wing"))
+			self.wingcolor = int(self.cfg.get("main","wingcolor"))
+			self.job = int(self.cfg.get("main","job"))
+			self.map = int(self.cfg.get("main","map"))
+			self.lv_base = int(self.cfg.get("main","lv_base"))
+			self.lv_job1 = int(self.cfg.get("main","lv_job1"))
+			self.lv_job2x = int(self.cfg.get("main","lv_job2x"))
+			self.lv_job2t = int(self.cfg.get("main","lv_job2t"))
+			self.lv_job3 = int(self.cfg.get("main","lv_job3"))
+			self.gold = int(self.cfg.get("main","gold"))
+			self.x = int(self.cfg.get("main","x"))
+			self.y = int(self.cfg.get("main","y"))
+			self.dir = int(self.cfg.get("main","dir"))
+			
+			self.str = int(self.cfg.get("status","str"))
+			self.dex = int(self.cfg.get("status","dex"))
+			self.int = int(self.cfg.get("status","int"))
+			self.vit = int(self.cfg.get("status","vit"))
+			self.agi = int(self.cfg.get("status","agi"))
+			self.mag = int(self.cfg.get("status","mag"))
+			self.stradd = int(self.cfg.get("status","stradd"))
+			self.dexadd = int(self.cfg.get("status","dexadd"))
+			self.intadd = int(self.cfg.get("status","intadd"))
+			self.vitadd = int(self.cfg.get("status","vitadd"))
+			self.agiadd = int(self.cfg.get("status","agiadd"))
+			self.magadd = int(self.cfg.get("status","magadd"))
+			
+			#{item_id:item_object, ...}
+			self.item = {}
+			self.sort.item = map(int, self.csv(self.cfg.get("sort", "item")))
+			for i in self.sort.item: #i:item id
+				itemcfg = map(int, self.csv(self.cfg.get("item", str(i))))
+				itemid = itemcfg[0]
+				itemcount = itemcfg[1]
+				item = self.itemobj.createitem(self.itemdic, itemid)
+				item.count = itemcount
+				self.item[i] = item
+			
+			#{item_id:item_object, ...}
+			self.warehouse = {}
+			self.sort.warehouse = map(int, self.csv(self.cfg.get("sort", "warehouse")))
+			for i in self.sort.warehouse: #i:item id
+				warehouse_itemcfg = map(int, self.csv(self.cfg.get("warehouse", str(i))))
+				warehouse_itemid = warehouse_itemcfg[0]
+				warehouse_itemcount = warehouse_itemcfg[1]
+				warehouse_id = warehouse_itemcfg[2]
+				warehouse_item = self.itemobj.createitem(self.itemdic, warehouse_itemid)
+				warehouse_item.count = warehouse_itemcount
+				warehouse_item.warehouse = warehouse_id
+				self.warehouse[i] = warehouse_item
+			
+			self.equip.head = int(self.cfg.get("equip","head"))
+			self.equip.face = int(self.cfg.get("equip","face"))
+			self.equip.chestacce = int(self.cfg.get("equip","chestacce"))
+			self.equip.tops = int(self.cfg.get("equip","tops"))
+			self.equip.bottoms = int(self.cfg.get("equip","bottoms"))
+			self.equip.backpack = int(self.cfg.get("equip","backpack"))
+			self.equip.right = int(self.cfg.get("equip","right"))
+			self.equip.left = int(self.cfg.get("equip","left"))
+			self.equip.shoes = int(self.cfg.get("equip","shoes"))
+			self.equip.socks = int(self.cfg.get("equip","socks"))
+			self.equip.pet = int(self.cfg.get("equip","pet"))
+			
+			try:
+				pcdiclist = self.cfg.options("dic")
+			except ConfigParser.NoSectionError:
+				pcdiclist = {}
+			self.dic = {}
+			if pcdiclist:
+				for name in pcdiclist:
+					self.dic[name] = self.cfg.get("dic", str(name))
+			#print self.dic
+			
+			try:
+				skill_list = self.cfg.get("skill", "list")
+			except ConfigParser.NoSectionError:
+				#print "[ pc  ]", "reset skill / ",
+				#print self.name.decode("utf-8").encode(sys.getfilesystemencoding())
+				skill_list = ""
+			# "10000000,10000001" --> [10000000, 10000001]
+			self.skill_list = list(map(int, filter(None, skill_list.split(","))))
+		
+		except ConfigParser.NoOptionError, e:
+			print e
+	
+	def saveallconfig(self, ConfigFileName):
+		if self.wait_for_delete:
+			return
+		self.cfg = ConfigParser.SafeConfigParser()
+		self.cfg.remove_section("main")
+		self.cfg.add_section("main")
+		self.cfg.set("main", "charid", str(self.charid))
+		self.cfg.set("main", "name", str(self.name))
+		self.cfg.set("main", "password", str(self.password))
+		self.cfg.set("main", "delpassword", str(self.delpassword))
+		self.cfg.set("main", "gmlevel", str(self.gmlevel))
+		self.cfg.set("main", "race", str(self.race))
+		self.cfg.set("main", "form", str(self.form))
+		self.cfg.set("main", "gender", str(self.gender))
+		self.cfg.set("main", "hair", str(self.hair))
+		self.cfg.set("main", "haircolor", str(self.haircolor))
+		self.cfg.set("main", "wig", str(self.wig))
+		self.cfg.set("main", "face", str(self.face))
+		self.cfg.set("main", "base_lv", str(self.base_lv))
+		self.cfg.set("main", "ex", str(self.ex))
+		self.cfg.set("main", "wing", str(self.wing))
+		self.cfg.set("main", "wingcolor", str(self.wingcolor))
+		self.cfg.set("main", "job", str(self.job))
+		self.cfg.set("main", "map", str(self.map))
+		self.cfg.set("main", "lv_base", str(self.lv_base))
+		self.cfg.set("main", "lv_job1", str(self.lv_job1))
+		self.cfg.set("main", "lv_job2x", str(self.lv_job2x))
+		self.cfg.set("main", "lv_job2t", str(self.lv_job2t))
+		self.cfg.set("main", "lv_job3", str(self.lv_job3))
+		self.cfg.set("main", "gold", str(self.gold))
+		self.cfg.set("main", "x", str(self.x))
+		self.cfg.set("main", "y", str(self.y))
+		self.cfg.set("main", "dir", str(self.dir))
+		
+		self.cfg.remove_section("status")
+		self.cfg.add_section("status")
+		self.cfg.set("status", "str", str(self.str))
+		self.cfg.set("status", "dex", str(self.dex))
+		self.cfg.set("status", "int", str(self.int))
+		self.cfg.set("status", "vit", str(self.vit))
+		self.cfg.set("status", "agi", str(self.agi))
+		self.cfg.set("status", "mag", str(self.mag))
+		self.cfg.set("status", "stradd", str(self.stradd))
+		self.cfg.set("status", "dexadd", str(self.dexadd))
+		self.cfg.set("status", "intadd", str(self.intadd))
+		self.cfg.set("status", "vitadd", str(self.vitadd))
+		self.cfg.set("status", "agiadd", str(self.agiadd))
+		self.cfg.set("status", "magadd", str(self.magadd))
+		
+		self.cfg.remove_section("equip")
+		self.cfg.add_section("equip")
+		self.cfg.set("equip", "head", str(self.equip.head))
+		self.cfg.set("equip", "face", str(self.equip.face))
+		self.cfg.set("equip", "chestacce", str(self.equip.chestacce))
+		self.cfg.set("equip", "tops", str(self.equip.tops))
+		self.cfg.set("equip", "bottoms", str(self.equip.bottoms))
+		self.cfg.set("equip", "backpack", str(self.equip.backpack))
+		self.cfg.set("equip", "right", str(self.equip.right))
+		self.cfg.set("equip", "left", str(self.equip.left))
+		self.cfg.set("equip", "shoes", str(self.equip.shoes))
+		self.cfg.set("equip", "socks", str(self.equip.socks))
+		self.cfg.set("equip", "pet", str(self.equip.pet))
+		
+		self.cfg.remove_section("item")
+		self.cfg.add_section("item")
+		self.cfg.remove_section("sort")
+		self.cfg.add_section("sort")
+		for i in sorted(self.item, key=int):
+			info = "%s,%s"%(self.item[i].id, self.item[i].count)
+			self.cfg.set("item", str(i), info)
+		sort = ""
+		for i in self.sort.item:
+			sort += ",%s"%i
+		if len(sort) >1:
+			sort = sort[1:]
+		self.cfg.set("sort", "item", sort)
+		
+		self.cfg.remove_section("warehouse")
+		self.cfg.add_section("warehouse")
+		for i in sorted(self.warehouse, key=int):
+			info = "%s,%s,%s"%(self.warehouse[i].id,
+					self.warehouse[i].count, self.warehouse[i].warehouse)
+			self.cfg.set("warehouse", str(i), info)
+		sort_warehouse = ""
+		for i in self.sort.warehouse:
+			sort_warehouse += ",%s"%i
+		if len(sort_warehouse) > 1:
+			sort_warehouse = sort_warehouse[1:]
+		self.cfg.set("sort", "warehouse", sort_warehouse)
+		
+		self.cfg.remove_section("dic")
+		self.cfg.add_section("dic")
+		for i in sorted(self.dic):
+			self.cfg.set("dic", str(i), str(self.dic[i]))
+		
+		# [10000000, 10000001] --> "10000000,10000001"
+		def list_to_str(l):
+			def appendspliter(item):
+				return "%s,"%item
+			return "".join(map(appendspliter, l))
+		self.cfg.remove_section("skill")
+		self.cfg.add_section("skill")
+		self.cfg.set("skill", "list", list_to_str(self.skill_list))
+		#print list_to_str(self.skill_list)
+		
+		vmcfg = StringIO.StringIO()
+		self.writehandle = open("./%s"%ConfigFileName, "wb")
+		self.cfg.write(vmcfg)
+		self.writehandle.write(vmcfg.getvalue().replace("\r\n", "\n").replace("\n", "\r\n"))
+		self.writehandle.close()
+	
+	def reset_attack_info(self):
+		if not self.attacking:
+			return
+		print "[ pc  ]", "stop attacking from",
+		print traceback.extract_stack()[-2][2]
+		self.attacking = False
+		with self.e.lock_pclist:
+			self.attacking = False
+			self.attacking_target = None
+			self.attacking_delay = 0
+	
 	def makenewpc(self):
-		newpc = PC()
-		#newpc.sort = PC.sort()
-		#newpc.equip = PC.equip()
-		#newpc.status = PC.status()
+		newpc = PC(self.itemobj, self.itemdic)
 		newpc.cfg = ConfigParser.SafeConfigParser()
 		newpc.cfg.add_section("main")
 		newpc.cfg.add_section("status")
@@ -259,12 +532,12 @@ class PC:
 		newpc.cfg.add_section("item")
 		newpc.cfg.add_section("warehouse")
 		newpc.cfg.add_section("dic")
-		newpc.account = "None"
-		newpc.charid = "None"
-		newpc.sid = "None"
-		newpc.name = "None"
-		newpc.password = "None"
-		newpc.delpassword = "None"
+		newpc.account = ""
+		newpc.charid = 0
+		newpc.sid = 0
+		newpc.name = ""
+		newpc.password = ""
+		newpc.delpassword = ""
 		newpc.race = 0
 		newpc.form = 0
 		newpc.gender = 1
@@ -287,18 +560,18 @@ class PC:
 		newpc.x = 13
 		newpc.y = 8
 		newpc.dir = 6
-		newpc.Str = 8
-		newpc.Dex = 3
-		newpc.Int = 3
-		newpc.Vit = 10
-		newpc.Agi = 4
-		newpc.Mag = 4
-		newpc.Stradd = 2
-		newpc.Dexadd = 1
-		newpc.Intadd = 1
-		newpc.Vitadd = 2
-		newpc.Agiadd = 1
-		newpc.Magadd = 1
+		newpc.str = 8
+		newpc.dex = 3
+		newpc.int = 3
+		newpc.vit = 10
+		newpc.agi = 4
+		newpc.mag = 4
+		newpc.stradd = 2
+		newpc.dexadd = 1
+		newpc.intadd = 1
+		newpc.vitadd = 2
+		newpc.agiadd = 1
+		newpc.magadd = 1
 		newpc.item = {}
 		newpc.warehouse = {}
 		newpc.sort.item = []
@@ -327,424 +600,159 @@ class PC:
 		newpc.dic = {}
 		newpc.skill_list = []
 		return newpc
-
-	def setfunc(self,itemobj,itemdic):
-		self.itemobj = itemobj
-		self.itemdic = itemdic
-
-	def csv(self,var):
-		var = var.split(",")
-		while True:
-			try:
-				var.remove("")
-			except:
-				break
-		return var
-
-	def saveallconfig(self, pc, ConfigFileName):
-		if pc.wait_for_delete:
-			return
-		pc.cfg.remove_section("main")
-		pc.cfg.add_section("main")
-		pc.cfg.set("main", "charid", str(pc.charid))
-		#pc.cfg.set("main", "charid", str(pc.sid))
-		pc.cfg.set("main", "name", str(pc.name))
-		pc.cfg.set("main", "password", str(pc.password))
-		pc.cfg.set("main", "delpassword", str(pc.delpassword))
-		pc.cfg.set("main", "gmlevel", str(pc.gmlevel))
-		pc.cfg.set("main", "race", str(pc.race))
-		pc.cfg.set("main", "form", str(pc.form))
-		pc.cfg.set("main", "gender", str(pc.gender))
-		pc.cfg.set("main", "hair", str(pc.hair))
-		pc.cfg.set("main", "haircolor", str(pc.haircolor))
-		pc.cfg.set("main", "wig", str(pc.wig))
-		pc.cfg.set("main", "face", str(pc.face))
-		pc.cfg.set("main", "base_lv", str(pc.base_lv))
-		pc.cfg.set("main", "ex", str(pc.ex))
-		pc.cfg.set("main", "wing", str(pc.wing))
-		pc.cfg.set("main", "wingcolor", str(pc.wingcolor))
-		pc.cfg.set("main", "job", str(pc.job))
-		pc.cfg.set("main", "map", str(pc.map))
-		pc.cfg.set("main", "lv_base", str(pc.lv_base))
-		pc.cfg.set("main", "lv_job1", str(pc.lv_job1))
-		pc.cfg.set("main", "lv_job2x", str(pc.lv_job2x))
-		pc.cfg.set("main", "lv_job2t", str(pc.lv_job2t))
-		pc.cfg.set("main", "lv_job3", str(pc.lv_job3))
-		pc.cfg.set("main", "gold", str(pc.gold))
-		pc.cfg.set("main", "x", str(pc.x))
-		pc.cfg.set("main", "y", str(pc.y))
-		pc.cfg.set("main", "dir", str(pc.dir))
-		
-		pc.cfg.remove_section("status")
-		pc.cfg.add_section("status")
-		pc.cfg.set("status", "str", str(pc.Str))
-		pc.cfg.set("status", "dex", str(pc.Dex))
-		pc.cfg.set("status", "int", str(pc.Int))
-		pc.cfg.set("status", "vit", str(pc.Vit))
-		pc.cfg.set("status", "agi", str(pc.Agi))
-		pc.cfg.set("status", "mag", str(pc.Mag))
-		pc.cfg.set("status", "stradd", str(pc.Stradd))
-		pc.cfg.set("status", "dexadd", str(pc.Dexadd))
-		pc.cfg.set("status", "intadd", str(pc.Intadd))
-		pc.cfg.set("status", "vitadd", str(pc.Vitadd))
-		pc.cfg.set("status", "agiadd", str(pc.Agiadd))
-		pc.cfg.set("status", "magadd", str(pc.Magadd))
-		
-		pc.cfg.remove_section("equip")
-		pc.cfg.add_section("equip")
-		pc.cfg.set("equip", "head", str(pc.equip.head))
-		pc.cfg.set("equip", "face", str(pc.equip.face))
-		pc.cfg.set("equip", "chestacce", str(pc.equip.chestacce))
-		pc.cfg.set("equip", "tops", str(pc.equip.tops))
-		pc.cfg.set("equip", "bottoms", str(pc.equip.bottoms))
-		pc.cfg.set("equip", "backpack", str(pc.equip.backpack))
-		pc.cfg.set("equip", "right", str(pc.equip.right))
-		pc.cfg.set("equip", "left", str(pc.equip.left))
-		pc.cfg.set("equip", "shoes", str(pc.equip.shoes))
-		pc.cfg.set("equip", "socks", str(pc.equip.socks))
-		pc.cfg.set("equip", "pet", str(pc.equip.pet))
-		
-		pc.cfg.remove_section("item")
-		pc.cfg.add_section("item")
-		itemlist = sorted(pc.item, key=int)
-		for x in itemlist:
-			x = int(x)
-			itemcfg = "%s,%s"%(pc.item[x].Id, pc.item[x].Count)
-			pc.cfg.set("item", str(x), itemcfg)
-		sort = ""
-		for x in pc.sort.item:
-			sort = sort+","+str(x)
-		if len(sort) > 1:
-			sort = sort[1:]
-		pc.cfg.set("sort", "item", sort)
-		
-		pc.cfg.remove_section("warehouse")
-		pc.cfg.add_section("warehouse")
-		warehouse_itemlist = sorted(pc.warehouse, key=int)
-		for x in warehouse_itemlist:
-			x = int(x)
-			warehouse_itemcfg = "%s,%s,%s"%(pc.warehouse[x].Id, \
-							pc.warehouse[x].Count, pc.warehouse[x].Warehouse)
-			pc.cfg.set("warehouse", str(x), warehouse_itemcfg)
-		warehouse_sort = ""
-		for x in pc.sort.warehouse:
-			warehouse_sort += ",%s"%(x, )
-		if len(warehouse_sort) > 1:
-			warehouse_sort = warehouse_sort[1:]
-		pc.cfg.set("sort", "warehouse", warehouse_sort)
-		
-		pc.cfg.remove_section("dic")
-		pc.cfg.add_section("dic")
-		pcdiclist = sorted(pc.dic)
-		for x in pcdiclist:
-			pc.cfg.set("dic", str(x), str(pc.dic[x]))
-		
-		# [10000000, 10000001] --> "10000000,10000001"
-		def list_to_str(l):
-			def appendspliter(item):
-				return "%s," % (str(item), )
-			return "".join(map(appendspliter, l))
-		pc.cfg.remove_section("skill")
-		pc.cfg.add_section("skill")
-		pc.cfg.set("skill", "list", list_to_str(pc.skill_list))
-		#print list_to_str(pc.skill_list)
-		
-		pc.writehandle = open("./"+ConfigFileName,"w")
-		pc.cfg.write(pc.writehandle)
-		pc.writehandle.close()
-
-	def loadallconfig(self, pc, ConfigFileName):
-		pc.readhandle = open("./"+ConfigFileName,"r")
-		content = pc.readhandle.read()
-		pc.readhandle.close()
-		contentcopy = content
-		contenthead_typea = content[:2].encode("hex").upper()
-		contenthead_typeb = content[:3].encode("hex").upper()
-		if contenthead_typea == "FEFF": #if do not upper, use typea == "feff"
-			content = content[2:]
-		elif contenthead_typea == "FFFE":
-			content = content[2:]
-		elif contenthead_typeb == "EFBBBF":
-			content = content[3:]
-		if len(content) != len(contentcopy):
-			pc.readhandle = open("./"+ConfigFileName, "w")
-			pc.readhandle.write(content)
-			pc.readhandle.close()
-		pc.readhandle.close()
-		
-		vmcfg = io.BytesIO(content)
-		pc.cfg = ConfigParser.SafeConfigParser()
-		pc.cfg.readfp(vmcfg)
-		vmcfg.close()
-		
-		try:
-			pc.charid = int(pc.cfg.get("main","charid"))
-			pc.sid = int(pc.cfg.get("main","charid"))
-			pc.name = pc.cfg.get("main","name")
-			pc.password = pc.cfg.get("main","password")
-			pc.delpassword = pc.cfg.get("main","delpassword")
-			pc.gmlevel = int(pc.cfg.get("main","gmlevel"))
-			pc.race = int(pc.cfg.get("main","race"))
-			pc.form = int(pc.cfg.get("main","form"))
-			try:
-				pc.gender = int(pc.cfg.get("main","gender"))
-			except:
-				pc.gender = int(pc.cfg.get("main","sex"))
-			pc.hair = int(pc.cfg.get("main","hair"))
-			pc.haircolor = int(pc.cfg.get("main","haircolor"))
-			pc.wig = int(pc.cfg.get("main","wig"))
-			pc.face = int(pc.cfg.get("main","face"))
-			pc.base_lv = int(pc.cfg.get("main","base_lv"))
-			pc.ex = int(pc.cfg.get("main","ex"))
-			pc.wing = int(pc.cfg.get("main","wing"))
-			pc.wingcolor = int(pc.cfg.get("main","wingcolor"))
-			pc.job = int(pc.cfg.get("main","job"))
-			pc.map = int(pc.cfg.get("main","map"))
-			pc.lv_base = int(pc.cfg.get("main","lv_base"))
-			pc.lv_job1 = int(pc.cfg.get("main","lv_job1"))
-			pc.lv_job2x = int(pc.cfg.get("main","lv_job2x"))
-			pc.lv_job2t = int(pc.cfg.get("main","lv_job2t"))
-			pc.lv_job3 = int(pc.cfg.get("main","lv_job3"))
-			pc.gold = int(pc.cfg.get("main","gold"))
-			pc.x = int(pc.cfg.get("main","x"))
-			pc.y = int(pc.cfg.get("main","y"))
-			pc.dir = int(pc.cfg.get("main","dir"))
-			
-			pc.Str = int(pc.cfg.get("status","str"))
-			pc.Dex = int(pc.cfg.get("status","dex"))
-			pc.Int = int(pc.cfg.get("status","int"))
-			pc.Vit = int(pc.cfg.get("status","vit"))
-			pc.Agi = int(pc.cfg.get("status","agi"))
-			pc.Mag = int(pc.cfg.get("status","mag"))
-			pc.Stradd = int(pc.cfg.get("status","stradd"))
-			pc.Dexadd = int(pc.cfg.get("status","dexadd"))
-			pc.Intadd = int(pc.cfg.get("status","intadd"))
-			pc.Vitadd = int(pc.cfg.get("status","vitadd"))
-			pc.Agiadd = int(pc.cfg.get("status","agiadd"))
-			pc.Magadd = int(pc.cfg.get("status","magadd"))
-			
-			#{item_id:item_object, ...}
-			pc.item = {}
-			pc.sort.item = map(int, self.csv(pc.cfg.get("sort","item")))
-			for x in pc.sort.item: # x is item id
-				itemcfg = map(int, self.csv(pc.cfg.get("item", str(x))))
-				itemid = itemcfg[0]
-				itemcount = itemcfg[1]
-				item = self.itemobj.createitem(self.itemdic, itemid)
-				item.Count = itemcount
-				pc.item[int(x)] = item
-			
-			#{item_id:item_object, ...}
-			pc.warehouse = {}
-			pc.sort.warehouse = map(int, self.csv(pc.cfg.get("sort", "warehouse")))
-			for x in pc.sort.warehouse: # x is item id
-				warehouse_itemcfg = map(int, self.csv(pc.cfg.get("warehouse", str(x))))
-				warehouse_itemid = warehouse_itemcfg[0]
-				warehouse_itemcount = warehouse_itemcfg[1]
-				warehouse_id = warehouse_itemcfg[2]
-				warehouse_item = self.itemobj.createitem(self.itemdic, warehouse_itemid)
-				warehouse_item.Count = warehouse_itemcount
-				warehouse_item.Warehouse = warehouse_id
-				pc.warehouse[int(x)] = warehouse_item
-			
-			pc.equip.head = int(pc.cfg.get("equip","head"))
-			pc.equip.face = int(pc.cfg.get("equip","face"))
-			pc.equip.chestacce = int(pc.cfg.get("equip","chestacce"))
-			pc.equip.tops = int(pc.cfg.get("equip","tops"))
-			pc.equip.bottoms = int(pc.cfg.get("equip","bottoms"))
-			pc.equip.backpack = int(pc.cfg.get("equip","backpack"))
-			pc.equip.right = int(pc.cfg.get("equip","right"))
-			pc.equip.left = int(pc.cfg.get("equip","left"))
-			pc.equip.shoes = int(pc.cfg.get("equip","shoes"))
-			pc.equip.socks = int(pc.cfg.get("equip","socks"))
-			pc.equip.pet = int(pc.cfg.get("equip","pet"))
-			
-			try:
-				pcdiclist = pc.cfg.options("dic")
-			except ConfigParser.NoSectionError:
-				pcdiclist = {}
-			pc.dic = {}
-			if pcdiclist:
-				for x in pcdiclist:
-					pc.dic[x] = pc.cfg.get("dic", str(x))
-			#print pc.dic
-			
-			try:
-				skill_list = pc.cfg.get("skill","list")
-			except ConfigParser.NoSectionError:
-				#print "[ pc  ]", "reset skill / ",
-				#print pc.name.decode("utf-8").encode(sys.getfilesystemencoding())
-				skill_list = ""
-			# "10000000,10000001" --> [10000000, 10000001]
-			pc.skill_list = list(map(int, filter(None, skill_list.split(","))))
-		
-		except ConfigParser.NoOptionError, e:
-			print e
-
-	def reset_attack_info(self):
-		if not self.attacking:
-			return
-		print "[ pc  ]", "stop attacking from",
-		print traceback.extract_stack()[-2][2]
-		self.attacking = False
-		with self.e.lock_pclist:
-			self.attacking = False
-			self.attacking_target = None
-			self.attacking_delay = 0
 	
 	def pcinit(self):
-		self.client = None
-		self.mapclient = None
-		self.account = None
-		self.charid = None
-		self.sid = None # server id
+		self.add("client", None) #None -> any type
+		self.add("mapclient", None)
+		self.add("account", "")
+		self.add("charid", 0)
+		self.add("sid", 0) #server id
 		
-		self.online = False
-		self.online_login = False
-		self.visible = False
-		self.loginevent = False
-		self.attacking = False
-		self.attacking_target = None
-		self.attacking_delay = 0
-		self.wait_for_delete = False
+		self.add("online", False) # online on mapserver
+		self.add("online_login", False) #online on loginserver
+		self.add("visible", False)
+		self.add("loginevent", False)
+		self.add("attacking", False)
+		self.add("attacking_target", None)
+		self.add("attacking_delay", 0)
+		self.add("wait_for_delete", False)
 		
-		self.selectresult = None
-		self.motion = 111
-		self.effect = None
-		self.tradestate = 0
-		self.tradelist = None
-		self.tradereturnlist = None
-		self.isnpctrade = False
-		self.warehouse_open = None
-		self.e = None
+		self.add("selectresult", None) #int or None
+		self.add("motion", 111)
+		self.add("effect", None)
+		self.add("tradestate", 0)
+		self.add("tradelist", [])
+		self.add("tradereturnlist", [])
+		self.add("isnpctrade", False)
+		self.add("warehouse_open", None) #int or None
+		self.add("e", None)
 		
-		self.name = None
-		self.password = None
-		self.delpassword = None
-		self.gmlevel = None
-		self.race = None
-		self.form = None
-		self.gender = None
-		self.hair = None
-		self.haircolor = None
-		self.wig = None
-		self.face = None
-		self.base_lv = None
-		self.ex = None
-		self.wing = None
-		self.wingcolor = None
-		self.job = None
-		self.map = None
-		self.lv_base = None
-		self.lv_job1 = None
-		self.lv_job2x = None
-		self.lv_job2t = None
-		self.lv_job3 = None
-		self.gold = None
+		self.add("name", "")
+		self.add("password", "")
+		self.add("delpassword", "")
+		self.add("gmlevel", 0)
+		self.add("race", 0)
+		self.add("form", 0)
+		self.add("gender", 0)
+		self.add("hair", 0)
+		self.add("haircolor", 0)
+		self.add("wig", 0)
+		self.add("face", 0)
+		self.add("base_lv", 0)
+		self.add("ex", 0)
+		self.add("wing", 0)
+		self.add("wingcolor", 0)
+		self.add("job", 0)
+		self.add("map", 0)
+		self.add("lv_base", 0)
+		self.add("lv_job1", 0)
+		self.add("lv_job2t", 0)
+		self.add("lv_job2x", 0)
+		self.add("lv_job3", 0)
+		self.add("gold", 0)
 		
-		self.Str = None
-		self.Dex = None
-		self.Int = None
-		self.Vit = None
-		self.Agi = None
-		self.Mag = None
-		self.Stradd = None
-		self.Dexadd = None
-		self.Intadd = None
-		self.Vitadd = None
-		self.Agiadd = None
-		self.Magadd = None
+		self.add("str", 0)
+		self.add("dex", 0)
+		self.add("int", 0)
+		self.add("vit", 0)
+		self.add("agi", 0)
+		self.add("mag", 0)
+		self.add("stradd", 0)
+		self.add("dexadd", 0)
+		self.add("intadd", 0)
+		self.add("vitadd", 0)
+		self.add("agiadd", 0)
+		self.add("magadd", 0)
 		
-		self.skill_list = None
+		self.add("x", 0)
+		self.add("y", 0)
+		self.add("dir", 0)
+		self.add("rawx", 0)
+		self.add("rawy", 0)
+		self.add("rawdir", 0)
 		
-		self.x = None
-		self.y = None
-		self.dir = None
-		self.rawx = None
-		self.rawy = None
-		self.rawdir = None
+		self.add("skill_list", [])
+		self.add("item", {})
+		self.add("warehouse", {})
+		self.add("dic", {})
+		self.add("battlestatus", 0)
 		
-		self.item = None
-		self.warehouse = None
-		self.dic = None
-		self.battlestatus = None
+		self.add("logout", False)
+		self.add("sendmapserver", False)
 		
-		self.logout = False
-		self.sendmapserver = False
-		
-		self.sort = self.SortClass()
-		self.equip = self.EquipClass()
-		self.status = self.StatusClass()
+		self.add("sort", self.SortClass())
+		self.add("equip", self.EquipClass())
+		self.add("status", self.StatusClass())
 
-	class SortClass:
+	class SortClass(DataAccessControl):
 		def __init__(self):
-			self.item = None
-			self.warehouse = None
-	class EquipClass:
+			self.add("item", [])
+			self.add("warehouse", [])
+	class EquipClass(DataAccessControl):
 		def __init__(self):
-			self.head = None
-			self.face = None
-			self.chestacce = None
-			self.tops = None
-			self.bottoms = None
-			self.backpack = None
-			self.right = None
-			self.left = None
-			self.shoes = None
-			self.socks = None
-			self.pet = None
-	class StatusClass:
+			self.add("head", 0)
+			self.add("face", 0)
+			self.add("chestacce", 0)
+			self.add("tops", 0)
+			self.add("bottoms", 0)
+			self.add("backpack", 0)
+			self.add("right", 0)
+			self.add("left", 0)
+			self.add("shoes", 0)
+			self.add("socks", 0)
+			self.add("pet", 0)
+	class StatusClass(DataAccessControl):
 		def __init__(self):
-			self.maxhp = 86
-			self.maxmp = 40
-			self.maxsp = 34
-			self.maxep = 30
-			self.hp = 86
-			self.mp = 40
-			self.sp = 34
-			self.ep = 30
-			self.speed = 410
-			self.minatk1 = 100
-			self.minatk2 = 100
-			self.minatk3 = 100
-			self.maxatk1 = 100
-			self.maxatk2 = 100
-			self.maxatk3 = 100
-			self.minmatk = 100
-			self.maxmatk = 100
-			self.leftdef = 50
-			self.rightdef = 30
-			self.leftmdef = 30
-			self.rightmdef = 20
-			self.shit = 7
-			self.lhit = 0 # ...
-			self.mhit = 7
-			self.chit = 0
-			self.savoid = 0 # ...
-			self.lavoid = 12
-			self.hpheal = 0
-			self.mpheal = 0
-			self.spheal = 0
-			self.aspd = 750 #190
-			self.cspd = 187
-			self.adelay = 2 * (1 - self.aspd/1000.0)
-			self.maxcapa = 1000
-			self.maxrightcapa = 0
-			self.maxleftcapa = 0
-			self.maxbackcapa = 0
-			self.maxpayl = 1000
-			self.maxrightpayl = 0
-			self.maxleftpayl = 0
-			self.maxbackpayl = 0
-			self.capa = 30
-			self.rightcapa = 0
-			self.leftcapa = 0
-			self.backcapa = 0
-			self.payl = 30
-			self.rightpayl = 0
-			self.leftpayl = 0
-			self.backpayl = 0
-
-
-
-
+			self.add("maxhp", 100)
+			self.add("maxmp", 40)
+			self.add("maxsp", 50)
+			self.add("maxep", 30)
+			self.add("hp", 100)
+			self.add("mp", 40)
+			self.add("sp", 50)
+			self.add("ep", 30)
+			
+			self.add("minatk1", 100)
+			self.add("minatk2", 100)
+			self.add("minatk3", 100)
+			self.add("maxatk1", 100)
+			self.add("maxatk2", 100)
+			self.add("maxatk3", 100)
+			self.add("minmatk", 100)
+			self.add("maxmatk", 100)
+			
+			self.add("leftdef", 50)
+			self.add("rightdef", 30)
+			self.add("leftmdef", 30)
+			self.add("rightmdef", 20)
+			self.add("shit", 7)
+			self.add("lhit", 0)
+			self.add("mhit", 7)
+			self.add("chit", 0)
+			self.add("savoid", 0)
+			self.add("lavoid", 12)
+			
+			self.add("hpheal", 0)
+			self.add("mpheal", 0)
+			self.add("spheal", 0)
+			self.add("aspd", 750) #190
+			self.add("cspd", 187)
+			self.add("speed", 410)
+			self.add("adelay", 2*(1-self.aspd/1000.0)) #attack delay
+			
+			self.add("maxcapa", 1000)
+			self.add("maxrightcapa", 0)
+			self.add("maxleftcapa", 0)
+			self.add("maxbackcapa", 0)
+			self.add("maxpayl", 1000)
+			self.add("maxrightpayl", 0)
+			self.add("maxleftpayl", 0)
+			self.add("maxbackpayl", 0)
+			self.add("capa", 30)
+			self.add("rightcapa", 0)
+			self.add("leftcapa", 0)
+			self.add("backcapa", 0)
+			self.add("payl", 30)
+			self.add("rightpayl", 0)
+			self.add("leftpayl", 0)
+			self.add("backpayl", 0)

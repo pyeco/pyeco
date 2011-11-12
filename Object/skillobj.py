@@ -26,14 +26,14 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import csv
 
-class Skill:
+class Skill(DataAccessControl):
 	def getskilldic(self, filename):
 		skilldic={}
 		reader = csv.reader(file(filename, "rb"))
-		def intx(i):
+		def int_if_not_null(i):
 			if i == "":
 				return 0
 			else:
@@ -48,12 +48,12 @@ class Skill:
 			except:
 				continue
 			skilldic[skillid]=Skill()
-			skilldic[skillid].Id = intx(row[0])
-			skilldic[skillid].Name = row[1]
-			skilldic[skillid].MaxLv = intx(row[4])
+			skilldic[skillid].id = int_if_not_null(row[0])
+			skilldic[skillid].name = row[1]
+			skilldic[skillid].maxlv = int_if_not_null(row[4])
 		return skilldic
-
+	
 	def __init__(self):
-		self.Id = None
-		self.Name = None
-
+		self.add("id", 0)
+		self.add("name", "")
+		self.add("maxlv", "")

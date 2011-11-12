@@ -26,37 +26,36 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+from Socket.DataAccessControl import DataAccessControl
+from mobobj import Mob
 import sys
 import os
 import copy
 import time
-from mobobj import Mob
 import traceback
-exceptinfo = traceback.format_exc
 
-class Event:
+class Event(DataAccessControl):
 	def __init__(self):
-		self.id = None
-		self.pclist = None
-		self.moblist = None
-		self.lock_pclist = None
-		self.lock_moblist = None
-		self.itemobj = None
-		self.itemdic = None
-		self.mapdic = None
-		self.shopdic = None
-		self.npcdic = None
-		self.mobdic = None
-		self.pack = None
-		self.send = None
-		self.sendmap = None
-		self.sendmapwithoutself = None
-		self.sendserver = None
-		self.netio = None
-		self.createpacket = None
-		self.serverobj = None
-		self.eventhandle = None
+		self.add("id", 0)
+		self.add("pclist", {})
+		self.add("moblist", {})
+		self.add("lock_pclist", None)
+		self.add("lock_moblist", None)
+		self.add("itemobj", None)
+		self.add("itemdic", {})
+		self.add("mapdic", {})
+		self.add("shopdic", {})
+		self.add("npcdic", {})
+		self.add("mobdic", {})
+		self.add("pack", None)
+		self.add("send", None)
+		self.add("sendmap", None)
+		self.add("sendmapwithoutself", None)
+		self.add("sendserver", None)
+		self.add("netio", None)
+		self.add("createpacket", None)
+		self.add("serverobj", None)
+		self.add("eventhandle", None)
 
 def say(pc, text, npc_name="", motion_id=131, npcid=None):
 	"""npc say"""
@@ -70,11 +69,11 @@ def say(pc, text, npc_name="", motion_id=131, npcid=None):
 	text = text.replace("$r","$R")
 	split = text.split("$R")
 	for text in split:
-		datatype,datacontent = pc.e.createpacket.create03f7(pc,text,npc_name,\
+		datatype, datacontent = pc.e.createpacket.create03f7(pc,text,npc_name,\
 													motion_id,npcid)
 		pc.e.send(datatype,datacontent,pc.mapclient,None)
 	#NPCメッセージのフッター
-	datatype,datacontent = pc.e.createpacket.create03f9()
+	datatype, datacontent = pc.e.createpacket.create03f9()
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
 
 def warp(pc, mapid, x, y):
@@ -87,18 +86,18 @@ def warp(pc, mapid, x, y):
 		systemmessage(pc, message)
 		return
 	elif int(x) > 255:
-		systemmessage(pc,"warp error / x > 255")
+		systemmessage(pc, "warp error / x > 255")
 		return
 	elif int(y) > 255:
-		systemmessage(pc,"warp error / y > 255")
+		systemmessage(pc, "warp error / y > 255")
 		return
 	pc.x = int(x)
 	pc.y = int(y)
 	pc.dir = 0
 	pc.rawdir = 0
 	if mapinfo != None:
-		centerx = mapinfo.Centerx
-		centery = mapinfo.Centery
+		centerx = mapinfo.centerx
+		centery = mapinfo.centery
 	else:
 		centerx,centery = 128,128
 	#print centerx,centery
@@ -120,7 +119,7 @@ def warp(pc, mapid, x, y):
 		rawx += 65536
 	if str(rawycache)[:1] == "-":
 		rawy += 65536
-	rawx,rawy = str(rawx),str(rawy)
+	rawx,rawy = str(rawx), str(rawy)
 	rawx,rawy = rawx.replace(".0",""),rawy.replace(".0","")
 	warpraw(pc, mapid, rawx, rawy, x, y)
 
@@ -136,15 +135,15 @@ def warpraw(pc, mapid, rawx, rawy, x=None, y=None):
 		systemmessage(pc, message)
 		return
 	elif rawx > 65535:
-		systemmessage(pc,"warpraw error / rawx > 65535")
+		systemmessage(pc, "warpraw error / rawx > 65535")
 		return
 	elif rawy > 65535:
-		systemmessage(pc,"warpraw error / rawy > 65535")
+		systemmessage(pc, "warpraw error / rawy > 65535")
 		return
 	if x == None or y == None:
 		if mapinfo != None:
-			centerx = mapinfo.Centerx
-			centery = mapinfo.Centery
+			centerx = mapinfo.centerx
+			centery = mapinfo.centery
 		else:
 			centerx,centery = 128,128
 		x, y = rawx, rawy
@@ -189,7 +188,7 @@ def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 	if towarehouse == None:
 		itemlist = pc.sort.item
 		pcitemdic = pc.item
-		equiplist = pc.equiplist(pc)
+		equiplist = pc.equiplist()
 	else:
 		towarehouse = int(towarehouse)
 		itemlist = pc.sort.warehouse
@@ -200,7 +199,7 @@ def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 	item = pc.e.itemobj.createitem(pc.e.itemdic, itemid)
 	stockidlist = []
 	newcount = 0
-	if item.Stock == 1:
+	if item.stock == 1:
 		for x in itemlist:
 			x = int(x)
 			if x == 0:
@@ -211,20 +210,20 @@ def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 			if iinfo == None:
 				print "can not get pc item info / giveitem", x, pc.account
 				continue
-			if iinfo.Id == itemid and iinfo.Count != 999:
+			if iinfo.id == itemid and iinfo.count != 999:
 				if towarehouse == None:
 					stockidlist.append(x)
 	for stockid in stockidlist:
 		if count == 0:
 			break
-		count = pcitemdic[stockid].Count+count
+		count = pcitemdic[stockid].count+count
 		if count > 999:
 			count = count - 999
 			newcount = 999
 		else:
 			newcount = count
 			count = 0
-		pcitemdic[stockid].Count = newcount
+		pcitemdic[stockid].count = newcount
 		if towarehouse == None:
 			#アイテム個数変化
 			datatype,datacontent = pc.e.createpacket.create09cf(stockid, newcount)
@@ -238,7 +237,7 @@ def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 		else:
 			newcount = count
 			count = 0
-		item.Count = newcount
+		item.count = newcount
 		existitemid = []
 		existitemid.extend(map(int, pc.item.keys()))
 		existitemid.extend(map(int, pc.warehouse.keys()))
@@ -255,17 +254,17 @@ def giveitem(pc, itemid, count=1, fromwarehouse=False, towarehouse=None):
 			datatype,datacontent = pc.e.createpacket.create09d4(pc, item, newid, 02)
 			pc.e.send(datatype, datacontent, pc.mapclient, None)
 		else:
-			pcitemdic[newid].Warehouse = towarehouse
+			pcitemdic[newid].warehouse = towarehouse
 			#倉庫インベントリーデータ
 			datatype,datacontent = pc.e.createpacket.create09f9(pc,item,newid,30)
 			pc.e.send(datatype, datacontent, pc.mapclient, None)
 	sysenc = sys.getfilesystemencoding()
 	print "[event]", "giveitem", printcount,
-	print str(item.Name).decode("utf-8").encode(sysenc), towarehouse
+	print str(item.name).decode("utf-8").encode(sysenc), towarehouse
 	if towarehouse == None:
-		systemmessage(pc, "%sを%s個入手しました"%(item.Name, printcount))
+		systemmessage(pc, "%sを%s個入手しました"%(item.name, printcount))
 	else:
-		systemmessage(pc, "%sを%s個預かりました"%(item.Name, printcount))
+		systemmessage(pc, "%sを%s個預かりました"%(item.name, printcount))
 	returnitem = copy.copy(item)
 	return returnitem
 
@@ -273,7 +272,7 @@ def takeitem(pc, itemid, count=1):
 	"""take item"""
 	itemlist = pc.sort.item
 	pcitemdic = pc.item
-	equiplist = pc.equiplist(pc)
+	equiplist = pc.equiplist()
 	itemid = int(itemid)
 	count = int(count)
 	printcount = str(count)
@@ -288,9 +287,9 @@ def takeitem(pc, itemid, count=1):
 		if iinfo == None:
 			print "can not get pc item info / takeitem", x, pc.account
 			continue
-		if iinfo.Id == itemid:
-			if iinfo.Count <= count:
-				printcount = str(iinfo.Count)
+		if iinfo.id == itemid:
+			if iinfo.count <= count:
+				printcount = str(iinfo.count)
 				returnitem = copy.copy(iinfo)
 				itemlist.remove(x)
 				del pcitemdic[x]
@@ -300,16 +299,16 @@ def takeitem(pc, itemid, count=1):
 				print "[event]", "take item", itemid,count
 			else:
 				stockid = x
-				#print int(pcitemdic[x].Count), int(count)
-				newcount = int(iinfo.Count) - int(count)
+				#print int(pcitemdic[x].count), int(count)
+				newcount = int(iinfo.count) - int(count)
 				returnitem = copy.copy(iinfo)
-				returnitem.Count = int(count)
-				pcitemdic[x].Count = newcount
+				returnitem.count = int(count)
+				pcitemdic[x].count = newcount
 				#アイテム個数変化
 				datatype,datacontent = pc.e.createpacket.create09cf(stockid, newcount)
 				pc.e.send(datatype, datacontent, pc.mapclient, None)
 				print "[event]", "take item", itemid, count
-			systemmessage(pc, "%sを%s個失いました"%(returnitem.Name, printcount))
+			systemmessage(pc, "%sを%s個失いました"%(returnitem.name, printcount))
 			return returnitem
 	print "[event]", "takeitem id not found", itemid
 	return None
@@ -319,7 +318,7 @@ def takeitembyiid(pc, iid, count=1, fromwarehouse=False):
 	if not fromwarehouse:
 		itemlist = pc.sort.item
 		pcitemdic = pc.item
-		equiplist = pc.equiplist(pc)
+		equiplist = pc.equiplist()
 	else:
 		itemlist = pc.sort.warehouse
 		pcitemdic = pc.warehouse
@@ -338,8 +337,8 @@ def takeitembyiid(pc, iid, count=1, fromwarehouse=False):
 			if iinfo == None:
 				print "can not get pc item info / takeitembyiid", x, pc.account
 				continue
-			if iinfo.Count <= count:
-				printcount = iinfo.Count
+			if iinfo.count <= count:
+				printcount = iinfo.count
 				returnitem = copy.copy(iinfo)
 				itemlist.remove(x)
 				del pcitemdic[x]
@@ -350,20 +349,20 @@ def takeitembyiid(pc, iid, count=1, fromwarehouse=False):
 				print "[event]", "take item by iid", iid, count, fromwarehouse
 			else:
 				stockid = x
-				#print int(pcitemdic[x].Count),int(count)
-				newcount = int(iinfo.Count) - int(count)
+				#print int(pcitemdic[x].count),int(count)
+				newcount = int(iinfo.count) - int(count)
 				returnitem = copy.copy(iinfo)
-				returnitem.Count = int(count)
-				pcitemdic[x].Count = newcount
+				returnitem.count = int(count)
+				pcitemdic[x].count = newcount
 				if not fromwarehouse:
 					#アイテム個数変化 
 					datatype,datacontent = pc.e.createpacket.create09cf(stockid, newcount)
 					pc.e.send(datatype, datacontent, pc.mapclient, None)
 				print "[event]", "take(minus) item by iid", iid, count, fromwarehouse
 			if not fromwarehouse:
-				systemmessage(pc, "%sを%s個失いました"%(returnitem.Name, printcount))
+				systemmessage(pc, "%sを%s個失いました"%(returnitem.name, printcount))
 			else:
-				systemmessage(pc, "%sを%s個取り出しました"%(returnitem.Name, printcount))
+				systemmessage(pc, "%sを%s個取り出しました"%(returnitem.name, printcount))
 			return returnitem
 	print "[event]", "takeitem iid not found", iid
 	return None
@@ -372,7 +371,7 @@ def countitem(pc, itemid):
 	"""count item"""
 	itemid = int(itemid)
 	itemlist = pc.sort.item
-	equiplist = pc.equiplist(pc)
+	equiplist = pc.equiplist()
 	returncount = 0
 	for x in itemlist:
 		x = int(x)
@@ -380,8 +379,8 @@ def countitem(pc, itemid):
 			continue
 		if x in equiplist:
 			continue
-		if pc.item[x].Id == itemid:
-			returncount += int(pc.item[x].Count)
+		if pc.item[x].id == itemid:
+			returncount += int(pc.item[x].count)
 	return returncount
 
 def select(pc, optionlist, title=""):
@@ -482,7 +481,7 @@ def npcshop(pc, shopid):
 def updateitemwindow(pc):
 	"""update item window"""
 	itemlist = pc.sort.item
-	equiplist = pc.equiplist(pc)
+	equiplist = pc.equiplist()
 	for x in itemlist:
 		x = int(x)
 		if x == 0:
@@ -490,7 +489,7 @@ def updateitemwindow(pc):
 		if x in equiplist:
 			continue
 		stockid = x
-		newcount = pc.item[stockid].Count
+		newcount = pc.item[stockid].count
 		#アイテム個数変化
 		datatype,datacontent = pc.e.createpacket.create09cf(stockid, newcount)
 		pc.e.send(datatype, datacontent, pc.mapclient, None)
@@ -503,7 +502,7 @@ def npctrade(pc):
 	if npcinfo == None:
 		npcname = ""
 	else:
-		npcname = npcinfo.Name
+		npcname = npcinfo.name
 	isnpc = 1
 	datatype,datacontent = pc.e.createpacket.create0a0f(pc, isnpc, npcname)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
@@ -537,7 +536,7 @@ def npcsell(pc):
 
 def updatepc(pc):
 	"""update pc information"""
-	datatype,datacontent = pc.e.createpacket.create020e(pc)
+	datatype, datacontent = pc.e.createpacket.create020e(pc)
 	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
 
 def warehouse(pc, warehouse_id):
@@ -548,13 +547,13 @@ def warehouse(pc, warehouse_id):
 	num_all = 0
 	for x in pc.sort.warehouse:
 		num_all = num_all + 1
-		if pc.warehouse[x].Warehouse == warehouse_id:
+		if pc.warehouse[x].warehouse == warehouse_id:
 			num_here = num_here + 1
 	datatype,datacontent = pc.e.createpacket.create09f6(pc, warehouse_id, num_here, num_all, num_max)
 	pc.e.send(datatype, datacontent, pc.mapclient, None)
 	for x in pc.sort.warehouse:
 		x = int(x)
-		part = pc.warehouse[x].Warehouse
+		part = pc.warehouse[x].warehouse
 		if part == warehouse_id:
 			part = 30
 		datatype,datacontent = pc.e.createpacket.create09f9(pc, pc.warehouse[x], x, part)
@@ -606,8 +605,8 @@ def mobmove(mob, x, y, pclist, mapdic, netio, createpacket):
 	mob.dir = 0
 	mob.rawdir = 0
 	if mapinfo != None:
-		centerx = mapinfo.Centerx
-		centery = mapinfo.Centery
+		centerx = mapinfo.centerx
+		centery = mapinfo.centery
 	else:
 		centerx, centery = 128,128
 	#print centerx,centery
@@ -650,8 +649,8 @@ def mobmoveraw(mob, rawx, rawy, pclist, mapdic, \
 		return
 	if x == None or y == None:
 		if mapinfo != None:
-			centerx = mapinfo.Centerx
-			centery = mapinfo.Centery
+			centerx = mapinfo.centerx
+			centery = mapinfo.centery
 		else:
 			centerx,centery = 128,128
 		x, y = int(rawx), int(rawy)
@@ -695,7 +694,7 @@ def mob(pc, mobid):
 			try:
 				existid.append(int(p.sid))
 			except:
-				print "[event]", "create mob error at append pc sid", exceptinfo()
+				print "[event]", "create mob error at append pc sid", traceback.format_exc()
 		existid.extend(pc.e.moblist.keys()) #maybe need map(int, keys)
 		while newmob.sid in existid:
 			newmob.sid += 1
@@ -725,6 +724,6 @@ def killallmob(pc):
 				datatype,datacontent = pc.e.createpacket.create1225(sid)
 				pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
 			except:
-				print "[event]", "killallmob error", exceptinfo()
+				print "[event]", "killallmob error", traceback.format_exc()
 	systemmessage(pc, "kill %s mob"%(len(removelist), ))
 	print "[event]", "kill", len(removelist), "mob"

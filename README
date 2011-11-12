@@ -2,6 +2,19 @@ old wiki: https://code.google.com/p/pyeco/w/list
 extra: https://github.com/pyeco/pyeco_extra
 license: BSD
 
+0.51.3
+type safe in almost class
+fix a problem cause load script error on linux
+change var name:
+	Id -> id, Str -> str, etc...
+	Def -> DEF
+	Attack1 -> atk1, Mattack -> matk, etc...
+call updatepc when change pc.hair, pc.wig, etc...
+modify pc.loadallconfig(pc, path) ...
+	to pc.loadallconfig(path)
+modify PC() to PC(global_itemobj, global_itemdic)
+rename *.htm to *.html
+
 0.51.2
 fix a problem cause can not see other character
 

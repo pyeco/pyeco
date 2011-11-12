@@ -26,11 +26,10 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+from Socket.DataAccessControl import DataAccessControl
 import csv
-
-class Mob:
-	def getmobdic(self,filename):
+class Mob(DataAccessControl):
+	def getmobdic(self, filename):
 		mobdic={}
 		reader = csv.reader(file(filename, "rb"))
 		def intx(i):
@@ -48,52 +47,37 @@ class Mob:
 			except:
 				continue
 			mobdic[mobid]=Mob()
-			mobdic[mobid].Id = intx(row[0])
-			mobdic[mobid].Name = row[1]
+			mobdic[mobid].id = intx(row[0])
+			mobdic[mobid].name = row[1]
 		return mobdic
 	
 	def __init__ (self):
-		self.sid = 0 #server id #ある程度を越えるとnpcとして見なされる
-					#でもある程度を越えないとクライアントが強制終了になる・・・
-		self.id = 0
-		self.charid = 0 # fake pc # equal self.sid
-		self.name = None
-		self.map = 0
-		self.x = 0
-		self.y = 0
-		self.dir = 0
-		self.centerx = 0
-		self.centery = 0
-		self.rawx = 0
-		self.rawy = 0
-		self.rawdir = 0
-		self.speed = 420
+		self.add("sid", 0) #server id #ある程度を越えるとnpcとして見なされる
+		self.add("id", 0)
+		self.add("charid", 0) #fake pc #equal self.sid
+		self.add("name", "")
+		self.add("map", 0)
+		self.add("x", 0)
+		self.add("y", 0)
+		self.add("dir", 0)
+		self.add("centerx", 0)
+		self.add("centery", 0)
+		self.add("rawx", 0)
+		self.add("rawy", 0)
+		self.add("rawdir", 0)
+		self.add("speed", 420)
+		self.add("hp", 100)
+		self.add("maxhp", 100)
+		self.add("mp", 1)
+		self.add("maxmp", 1)
+		self.add("sp", 1)
+		self.add("maxsp", 1)
+		self.add("ep", 0)
+		self.add("maxep", 0)
 		
-		self.hp = 100
-		self.maxhp = 100
-		self.mp = 1
-		self.maxmp = 1
-		self.sp = 1
-		self.maxsp = 1
-		self.ep = 0
-		self.maxep = 0
-		
-		self.npc = False
-		self.last_move_count = 0
-		self.counter_attack_delay_count = 0
-		self.moveable_area = 5
-		self.die = 0 # hide after 5 sec
-		self.damagedic = None # if set {} , will bug on copy.copy
-
-
-
-
-
-
-
-
-
-
-
-
-
+		self.add("npc", False)
+		self.add("last_move_count", 0)
+		self.add("counter_attack_delay_count", 0)
+		self.add("moveable_area", 5)
+		self.add("die", 0) #hide after 5 sec
+		self.add("damagedic", None) #if set {} , will bug on copy.copy

@@ -26,31 +26,27 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	
+from Socket.DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
 import hashlib
 import Socket.rijndael
 from Object.itemobj import Item
-try:
-	import traceback
-except ImportError, e:
-	print "import error", e
-	exceptinfo = sys.exc_info
-else:
-	exceptinfo = traceback.format_exc
-	
-class PacketHandle:
+import traceback
+
+class PacketHandle(DataAccessControl):
 	def __init__(self):
-		self.dolist = list(set(map(self.rm, dir(self))))
+		self.add("dolist", list(set(map(self.rm, dir(self)))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-
+		self.add("returntype", None)
+		self.add("returndata", None)
+	
 	def rm(self, s):
 		if s[:3] == "do_":
 			return s[3:]
@@ -64,16 +60,16 @@ class PacketHandle:
 			else:
 				print "[login]", "packet", s, "packet type didn't define"
 		except:
-			print "[login]", "error in do /", exceptinfo()
+			print "[login]", "error in do /", traceback.format_exc()
 	
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.encode = self.cryptio.encode
-		self.decode = self.cryptio.decode
-		self.pack = self.netio.pack
-		self.send = self.netio.send
-		self.passtype = list()
+		self.add("encode", self.cryptio.encode)
+		self.add("decode", self.cryptio.decode)
+		self.add("pack", self.netio.pack)
+		self.add("send", self.netio.send)
+		self.add("passtype", [])
 		self.passtype.append("000a")#ping
 	
 	def setpclist(self, pclist):
@@ -98,7 +94,7 @@ class PacketHandle:
 			self.returntype, self.returndata = None, None
 			self.do(recvtype, pc, data, datalength, recvhead, recvtype, recvcontent)
 		except:
-			print "[login]", "error in packet_handle /", exceptinfo()
+			print "[login]", "error in packet_handle /", traceback.format_exc()
 			self.returntype = None
 			self.returndata = None
 		return self.returntype, self.returndata
@@ -106,9 +102,9 @@ class PacketHandle:
 	def do_0001(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		clientver = recvcontent[4:16]
 		print "[login]", "client version", clientver
-		datatype,datacontent = self.createpacket.create0002(clientver)
+		datatype, datacontent = self.createpacket.create0002(clientver)
 		self.send(datatype,datacontent,pc.client,None)
-		datatype,datacontent = self.createpacket.create001e()
+		datatype, datacontent = self.createpacket.create001e()
 		self.send(datatype,datacontent,pc.client,None)
 	
 	def do_000a(self, pc, data, datalength, recvhead, recvtype, recvcontent):
@@ -157,8 +153,8 @@ class PacketHandle:
 					pc.motion = 111
 					pc.effect = None
 					pc.tradestate = 0
-					pc.tradelist = None
-					pc.tradereturnlist = None
+					pc.tradelist = []
+					pc.tradereturnlist = []
 					pc.isnpctrade = False
 					pc.warehouse_open = None
 					pc.battlestatus = 0
