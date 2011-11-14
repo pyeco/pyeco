@@ -35,10 +35,11 @@ from cryptio import CryptIO
 import traceback
 
 class NetIO(DataAccessControl):
-	def init(self, cryptio):
+	def __init__(self, cryptio, lock_pclist):
 		self.add("cryptio", cryptio)
 		self.add("encode", self.cryptio.encode)
 		self.add("decode", self.cryptio.decode)
+		self.add("lock_pclist", lock_pclist)
 	
 	def calc_data_head(self, datatype, datacontent):
 		try:
@@ -61,9 +62,9 @@ class NetIO(DataAccessControl):
 	
 	def packstr(self, string):
 		try:
-			string = str(string)
-			if string == "":
+			if not string:
 				return "0100"
+			string = str(string)
 			string = string.encode("hex")+"00"
 			stringhead = self.pack(len(string)/2, 2)
 			result = stringhead+string
@@ -123,28 +124,34 @@ class NetIO(DataAccessControl):
 	
 	def sendmap(self, datatype, datacontent, pclist, pc, datalength=None, fast=False):
 		try:
-			for p in pclist.values():
-				if p.online and p.mapclient != None:
-					if p.map == pc.map:
-						self.send(datatype, datacontent, p.mapclient, None, fast)
+			with self.lock_pclist:
+				for p in pclist.values():
+					if not (p.online and p.mapclient):
+						continue
+					if not (p.map == pc.map):
+						continue
+					self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
 			print "[netio]","error on sendmap /", traceback.format_exc()
 	
 	def sendmapwithoutself(self, datatype, datacontent, pclist, pc, datalength=None, fast=False):
 		try:
-			for p in pclist.values():
-				if p.online and p.mapclient != None:
-					if p.charid != pc.charid and p.map == pc.map:
-						self.send(datatype, datacontent, p.mapclient, None, fast)
+			with self.lock_pclist:
+				for p in pclist.values():
+					if not (p.online and p.mapclient):
+						continue
+					if not (p.charid != pc.charid and p.map == pc.map):
+						continue
+					self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
 			print "[netio]","error on sendmapwithoutself /", traceback.format_exc()
 	
 	def sendserver(self, datatype, datacontent, pclist, pc, datalength=None, fast=False):
 		try:
-			for p in pclist.values():
-				if p.online:
+			with self.lock_pclist:
+				for p in pclist.values():
+					if not (p.online and p.mapclient):
+						continue
 					self.send(datatype, datacontent, p.mapclient, None, fast)
 		except Exception:
 			print "[netio]","error on sendserver /", traceback.format_exc()
-
-

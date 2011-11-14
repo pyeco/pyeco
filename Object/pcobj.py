@@ -199,6 +199,7 @@ class PC(DataAccessControl):
 		elif item.type in TYPE_PET:
 			if self.equip.pet != 0:
 				old.append(self.equip.pet)
+				eventobj.unsetpet(self)
 			self.equip.pet = iid
 			new = 18
 		return old, new
@@ -230,6 +231,7 @@ class PC(DataAccessControl):
 			self.equip.socks = 0
 		elif self.equip.pet == iid:
 			self.equip.pet = 0
+			eventobj.unsetpet(self)
 	
 	def equiplist(self):
 		l = []
@@ -402,6 +404,8 @@ class PC(DataAccessControl):
 	
 	def saveallconfig(self, ConfigFileName):
 		if self.wait_for_delete:
+			return
+		if ConfigFileName.find("..") != -1:
 			return
 		self.cfg = ConfigParser.SafeConfigParser()
 		self.cfg.remove_section("main")
@@ -676,6 +680,10 @@ class PC(DataAccessControl):
 		self.add("warehouse", {})
 		self.add("dic", {})
 		self.add("battlestatus", 0)
+		self.add("wrprank", 0)
+		
+		self.add("pet", None) #Pet()
+		self.add("kanban", "")
 		
 		self.add("logout", False)
 		self.add("sendmapserver", False)

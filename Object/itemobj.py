@@ -109,6 +109,7 @@ class Item(DataAccessControl):
 			itemdic[itemid].confuse = intx(row[82])
 			itemdic[itemid].freeze = intx(row[83])
 			itemdic[itemid].stan = intx(row[84])
+			itemdic[itemid].petid = intx(row[167])
 		return itemdic
 	
 	def createitem(self, itemdic, itemid):
@@ -176,3 +177,4 @@ class Item(DataAccessControl):
 		self.add("confuse", 0)
 		self.add("freeze", 0)
 		self.add("stan", 0)
+		self.add("petid", 0)

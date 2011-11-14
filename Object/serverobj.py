@@ -116,6 +116,8 @@ class Server(DataAccessControl):
 			print e
 	
 	def saveallconfig(self, ConfigFileName):
+		if ConfigFileName.find("..") != -1:
+			return
 		self.cfg = ConfigParser.SafeConfigParser()
 		self.cfg.add_section("main")
 		self.cfg.add_section("player")

@@ -28,9 +28,9 @@
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from Socket.DataAccessControl import DataAccessControl
 import csv
-class Mob(DataAccessControl):
-	def getmobdic(self, filename):
-		mobdic={}
+class Pet(DataAccessControl):
+	def getpetdic(self, filename):
+		petdic={}
 		reader = csv.reader(file(filename, "rb"))
 		def intx(i):
 			if i == "":
@@ -43,41 +43,67 @@ class Mob(DataAccessControl):
 			if row[0][0:1] == "#":
 				continue
 			try:
-				mobid = int(row[0])
+				petid = int(row[0])
 			except:
 				continue
-			mobdic[mobid]=Mob()
-			mobdic[mobid].id = intx(row[0])
-			mobdic[mobid].name = row[1]
-		return mobdic
+			petdic[petid]=Pet()
+			petdic[petid].id = intx(row[0])
+			petdic[petid].name = row[1]
+			petdic[petid].pictid = row[2]
+			petdic[petid].item[1].id = petdic[petid].pictid
+			petdic[petid].hp = row[19]
+			petdic[petid].maxhp = row[19]
+		return petdic
 	
 	def __init__ (self):
-		self.add("id", 0)
-		self.add("sid", 0) #server id #ある程度を越えるとnpcとして見なされる
+		self.add("id", 0) #pet id
+		self.add("pictid", 0) #pet pictid
+		self.add("sid", 0) #server id
 		self.add("charid", 0) #fake pc #equal server id
 		self.add("name", "")
+		self.add("master", None) # PC()
+		self.add("hp", 0)
+		self.add("maxhp", 0)
 		self.add("map", 0)
 		self.add("x", 0)
 		self.add("y", 0)
 		self.add("dir", 0)
-		self.add("centerx", 0)
-		self.add("centery", 0)
 		self.add("rawx", 0)
 		self.add("rawy", 0)
 		self.add("rawdir", 0)
-		self.add("speed", 420)
-		self.add("hp", 100)
-		self.add("maxhp", 100)
-		self.add("mp", 1)
-		self.add("maxmp", 1)
-		self.add("sp", 1)
-		self.add("maxsp", 1)
-		self.add("ep", 0)
-		self.add("maxep", 0)
-		
-		self.add("npc", False)
-		self.add("last_move_count", 0)
-		self.add("counter_attack_delay_count", 0)
-		self.add("moveable_area", 5)
-		self.add("die", 0) #hide after 5 sec
-		self.add("damagedic", None) #if set {} , will bug on copy.copy
+		self.add("speed", 310) #410
+		self.add("motion", 0)
+		self.add("lv_base", 1)
+		#for CreatePacket.create020e
+		self.add("race", 0)
+		self.add("form", 0)
+		self.add("gender", 1)
+		self.add("hair", 0)
+		self.add("haircolor", 0)
+		self.add("wig", 0)
+		self.add("face", 0)
+		self.add("base_lv", 0)
+		self.add("ex", 0)
+		self.add("wing", 0)
+		self.add("wingcolor", 0)
+		self.add("wrprank", 0)
+		self.add("item", {1: self.FakeHeadItem()})
+		self.add("equip", self.EquipClass())
+	
+	class FakeHeadItem(DataAccessControl):
+		def __init__(self):
+			self.add("id", 0)
+			self.add("type", "HELM")
+	class EquipClass(DataAccessControl):
+		def __init__(self):
+			self.add("head", 1)
+			self.add("face", 0)
+			self.add("chestacce", 0)
+			self.add("tops", 0)
+			self.add("bottoms", 0)
+			self.add("backpack", 0)
+			self.add("right", 0)
+			self.add("left", 0)
+			self.add("shoes", 0)
+			self.add("socks", 0)
+			self.add("pet", 0)

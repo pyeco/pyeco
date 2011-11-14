@@ -82,7 +82,7 @@ class MobHandle(DataAccessControl):
 		mob.last_move_count = 0
 		movex, movey = self.get_new_point(mob, tox, toy)
 		#print "[ mob ]", "movemob", mob.x, mob.y, "->", movex, movey
-		mobmove(mob, movex, movey, self.pclist, self.mapdic, \
+		mobmove(mob, movex, movey, self.pclist, self.mapdic,
 				self.netio, self.createpacket)
 	
 	def get_active_map_list(self):
@@ -230,10 +230,3 @@ class MobHandle(DataAccessControl):
 				if self.except_count > 100:
 					print "[ all ]", "thread_mobhandle end / except_count > 100"
 					break
-	
-	
-	
-	
-	
-	
-	

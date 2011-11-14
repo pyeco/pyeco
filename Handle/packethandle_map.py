@@ -89,14 +89,17 @@ class PacketHandle_Map(DataAccessControl):
 		self.event.id = 00000000
 		self.event.pclist = self.pclist
 		self.event.moblist = self.moblist
+		self.event.petlist = self.petlist
 		self.event.lock_pclist = self.lock_pclist
 		self.event.lock_moblist = self.lock_moblist
+		self.event.lock_petlist = self.lock_petlist
 		self.event.itemobj = self.itemobj
 		self.event.itemdic = self.itemdic
 		self.event.mapdic = self.mapdic
 		self.event.shopdic = self.shopdic
 		self.event.npcdic = self.npcdic
 		self.event.mobdic = self.mobdic
+		self.event.petdic = self.petdic
 		self.event.pack = self.pack
 		self.event.send = self.send
 		self.event.sendmap = self.sendmap
@@ -134,17 +137,17 @@ class PacketHandle_Map(DataAccessControl):
 	
 	def do_0032(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""接続確認(マップサーバとのみ)#20秒一回"""
-		datatype,datacontent = self.createpacket.create0033(None, None, reply=True)
-		self.send(datatype,datacontent,pc.mapclient,None)
+		datatype, datacontent = self.createpacket.create0033(None, None, reply=True)
+		self.send(datatype, datacontent, pc.mapclient, None)
 	
 	#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>接続
 	def do_000a(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""接続・接続確認"""
 		print "[ map ]", "connection initialization"
-		datatype,datacontent = self.createpacket.create000b(recvcontent)
-		self.send(datatype,datacontent,pc.mapclient,None)
+		datatype, datacontent = self.createpacket.create000b(recvcontent)
+		self.send(datatype, datacontent, pc.mapclient, None)
 		datatype,datacontent = self.createpacket.create000f()
-		self.send(datatype,datacontent,pc.mapclient,None)
+		self.send(datatype, datacontent, pc.mapclient, None)
 	
 	def do_0010(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""マップサーバーに認証情報の送信"""
@@ -390,40 +393,65 @@ class PacketHandle_Map(DataAccessControl):
 		self.send(datatype, datacontent, pc.mapclient, None)
 		
 		#他キャラ情報
-		for p in self.pclist.itervalues():
-			if p.online and p.mapclient != None:
-				if p.charid != pc.charid and p.map == pc.map:
-					#print "send 120c"
-					#他キャラ情報→自キャラ
-					datatype, datacontent = self.createpacket.create120c(p)
+		with self.lock_pclist:
+			for p in self.pclist.itervalues():
+				if not (p.online and p.mapclient):
+					continue
+				if not (p.charid != pc.charid and p.map == pc.map):
+					continue
+				#print "send 120c"
+				#他キャラ情報→自キャラ
+				datatype, datacontent = self.createpacket.create120c(p)
+				self.send(datatype, datacontent, pc.mapclient, None)
+				if p.pet:
+					datatype, datacontent = pc.e.createpacket.create122f(p, p.pet)
 					self.send(datatype, datacontent, pc.mapclient, None)
-					#自キャラ情報→他キャラ
-					datatype, datacontent = self.createpacket.create120c(pc)
-					self.send(datatype, datacontent, p.mapclient, None)
+				#自キャラ情報→他キャラ
+				datatype, datacontent = self.createpacket.create120c(pc)
+				self.send(datatype, datacontent, p.mapclient, None)
 		#モンスター情報
-		for m in self.moblist.itervalues(): # in self.moblist.keys()
-			if m.hp <= 0:
-				continue
-			if m.map == pc.map:
+		with self.lock_moblist:
+			for m in self.moblist.itervalues(): # in self.moblist.keys()
+				if m.hp <= 0:
+					continue
+				if not (m.map == pc.map):
+					continue
 				#モンスターID通知
-				datatype,datacontent = self.createpacket.create122a(pc, (m.sid,), m.npc)
+				datatype, datacontent = self.createpacket.create122a(pc, (m.sid,), m.npc)
 				self.send(datatype, datacontent, pc.mapclient, None)
 				#モンスター情報
-				datatype,datacontent = self.createpacket.create1220(pc, m)
+				datatype, datacontent = self.createpacket.create1220(pc, m)
 				self.send(datatype, datacontent, pc.mapclient, None)
+		#pet info
+		eventobj.unsetpet(pc)
+		eventobj.setpet(pc)
 	
 	def do_020d(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""キャラクタ情報要求"""
 		requestid = int(recvcontent[0:8],16)
-		print "[ map ]", "request other character detail",requestid
-		for p in self.pclist.itervalues():
-			if p.online and p.charid == requestid:
+		print "[ map ]", "request other character detail", requestid
+		if requestid >= 20000: #pet
+			with self.lock_petlist:
+				pet = self.petlist.get(requestid)
+				if pet:
+					print "[ map ]", "send pet sid %s info (020e)"%pet.sid
+					datatype, datacontent = self.createpacket.create020e(pet)
+					self.send(datatype, datacontent, pc.mapclient, None)
+					return # self.lock_petlist.__exit__
+		with self.lock_pclist:
+			for p in self.pclist.itervalues(): #player
+				if not p.online or p.charid != requestid:
+					continue
 				#キャラ情報
 				#print "send 020e"
 				datatype, datacontent = self.createpacket.create020e(p)
 				self.send(datatype, datacontent, pc.mapclient, None)
 				#datatype,datacontent = self.createpacket.create121c(p, p.motion, "1")
 				#self.send(datatype,datacontent,pc.mapclient,None)
+				#get kanban
+				datatype, datacontent = self.createpacket.create041b(p)
+				self.send(datatype, datacontent, pc.mapclient, None)
+				break
 	
 	def do_0fa5(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""戦闘状態変更通知"""
@@ -503,7 +531,10 @@ class PacketHandle_Map(DataAccessControl):
 		"""ログアウト(PASS鍵リセット・マップサーバーとのみ通信)"""
 		if recvcontent.upper() != "FF":
 			print "[ map ]", "client logout"
-		datatype,datacontent = self.createpacket.create1211(pc)
+		#hide pet
+		eventobj.unsetpet(pc, True)
+		#hide pc
+		datatype, datacontent = self.createpacket.create1211(pc)
 		self.sendmapwithoutself(datatype, datacontent, self.pclist, pc, None)
 	
 	def do_001f(self, pc, data, datalength, recvhead, recvtype, recvcontent):
@@ -542,31 +573,33 @@ class PacketHandle_Map(DataAccessControl):
 		"""アイテム装備"""
 		#pc.reset_attack_info()
 		iid = int(recvcontent[0:8],16)
-		if pc.item.get(iid) == None:
+		if not pc.item.get(iid):
 			print "[ map ]", "error on item setup", iid
-		else:
-			old, new = pc.setequip(iid, self.itemobj, self.itemdic)
-			print "[ map ]", "item setup", pc.item[iid].id, old, new
-			if int(new) == 0:
-				#装備しようとする装備タイプが不明の場合
-				#アイテム装備
-				datatype,datacontent = self.createpacket.create09e8(iid, -1, -2, 1)
+			return
+		old, new = pc.setequip(iid, self.itemobj, self.itemdic)
+		print "[ map ]", "item setup", pc.item[iid].id, old, new
+		if not new:
+			#装備しようとする装備タイプが不明の場合
+			#アイテム装備
+			datatype, datacontent = self.createpacket.create09e8(iid, -1, -2, 1)
+			self.send(datatype, datacontent, pc.mapclient, None)
+			return
+		for x in old:
+			if int(x) != 0 and x != "":
+				#装備先に居る装備を外す時の処理
+				pc.sort.item.remove(x)
+				pc.sort.item.append(x)
+				#アイテム保管場所変更
+				datatype, datacontent = self.createpacket.create09e3(x, 02)
 				self.send(datatype, datacontent, pc.mapclient, None)
-			else:
-				for x in old:
-					if int(x) != 0 and x != "":
-						#装備先に居る装備を外す時の処理
-						pc.sort.item.remove(x)
-						pc.sort.item.append(x)
-						#アイテム保管場所変更
-						datatype,datacontent = self.createpacket.create09e3(x, 02)
-						self.send(datatype, datacontent, pc.mapclient, None)
-				#アイテム装備
-				datatype,datacontent = self.createpacket.create09e8(iid, new, 0, 1)
-				self.send(datatype, datacontent, pc.mapclient, None)
-				#キャラの見た目を変更
-				datatype,datacontent = self.createpacket.create09e9(pc)
-				self.sendmap(datatype, datacontent, self.pclist, pc, None)
+		#アイテム装備
+		datatype,datacontent = self.createpacket.create09e8(iid, new, 0, 1)
+		self.send(datatype, datacontent, pc.mapclient, None)
+		#キャラの見た目を変更
+		datatype,datacontent = self.createpacket.create09e9(pc)
+		self.sendmap(datatype, datacontent, self.pclist, pc, None)
+		if new == 18: # set pet
+			eventobj.setpet(pc)
 	
 	def do_11f8(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""自キャラの移動"""
@@ -605,6 +638,9 @@ class PacketHandle_Map(DataAccessControl):
 		#キャラ移動アナウンス
 		datatype,datacontent = self.createpacket.create11f9(pc)
 		self.sendmapwithoutself(datatype, datacontent, self.pclist, pc, None)
+		if pc.pet: #pet move
+			eventobj.mobmove(pc.pet, pc.x, pc.y, self.pclist, self.mapdic,
+						self.netio, self.createpacket)
 	
 	def do_0605(self, pc, data, datalength, recvhead, recvtype, recvcontent):
 		"""NPCメッセージ(選択肢)の返信"""
@@ -775,7 +811,7 @@ class PacketHandle_Map(DataAccessControl):
 		print "[ map ]","take item from warehouse", iid, count
 		if pc.warehouse_open == None:
 			#倉庫から取り出した時の結果#倉庫を開けていません
-			datatype,datacontent = self.createpacket.create09fc(-1)
+			datatype, datacontent = self.createpacket.create09fc(-1)
 			self.send(datatype, datacontent, pc.mapclient, None)
 			raise ValueError, "pc.warehouse_open == None"
 		if not pc.warehouse.get(iid):
@@ -785,7 +821,7 @@ class PacketHandle_Map(DataAccessControl):
 			raise ValueError, "not pc.warehouse.get(iid)"
 		if int(pc.warehouse[iid].count) < int(count):
 			#倉庫から取り出した時の結果#指定された数量が不正です
-			datatype,datacontent = self.createpacket.create09fc(-3)
+			datatype, datacontent = self.createpacket.create09fc(-3)
 			self.send(datatype, datacontent, pc.mapclient, None)
 			raise ValueError, "int(pc.warehouse[iid].count) < int(count)"
 		pc.e = copy.copy(self.event)
@@ -793,7 +829,7 @@ class PacketHandle_Map(DataAccessControl):
 		if item:
 			eventobj.giveitem(pc, item.id, item.count, fromwarehouse=True)
 			#倉庫から取り出した時の結果#成功
-			datatype,datacontent = self.createpacket.create09fc(0)
+			datatype, datacontent = self.createpacket.create09fc(0)
 			self.send(datatype, datacontent, pc.mapclient, None)
 
 	def do_09fd(self, pc, data, datalength, recvhead, recvtype, recvcontent):
@@ -821,7 +857,7 @@ class PacketHandle_Map(DataAccessControl):
 		if item:
 			eventobj.giveitem(pc, item.id, item.count, towarehouse=pc.warehouse_open)
 			#倉庫に預けた時の結果#成功
-			datatype,datacontent = self.createpacket.create09fe(0)
+			datatype, datacontent = self.createpacket.create09fe(0)
 			self.send(datatype, datacontent, pc.mapclient, None)
 	
 	def do_0258(self, pc, data, datalength, recvhead, recvtype, recvcontent):
@@ -877,3 +913,13 @@ class PacketHandle_Map(DataAccessControl):
 		datatype, datacontent = self.createpacket.create138a(pc, 13)
 		self.send(datatype, datacontent, pc.mapclient, None)
 		eventobj.systemmessage(pc, "スキル["+skillname+"]は未実装です")
+
+	def do_041a(self, pc, data, datalength, recvhead, recvtype, recvcontent):
+		"""set kanban"""
+		pc.kanban = recvcontent[2:-2].decode("hex") #0431313100 -> 313131 -> 111
+		datatype, datacontent = self.createpacket.create041b(pc)
+		self.sendmap(datatype, datacontent, self.pclist, pc, None)
+	
+	#def do_1d4c(self, pc, data, datalength, recvhead, recvtype, recvcontent):
+	#	"""greeting"""
+	#	targetsid = int(recvcontent, 16)

@@ -28,7 +28,8 @@
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from DataAccessControl import DataAccessControl
 from twisted.internet.protocol import Protocol, ServerFactory
-#from twisted.internet import reactor
+from Handle.packethandle_map import PacketHandle_Map
+from Object.pcobj import PC
 import os
 import socket
 import sys
@@ -156,6 +157,5 @@ class Socket_Map(Protocol, DataAccessControl):
 		pc.attacking = False
 		pc.attacking_target = None
 		pc.attacking_delay = 0
-
-from Handle.packethandle_map import PacketHandle_Map
-from Object.pcobj import PC
+		pc.pet = None
+		pc.kanban = ""

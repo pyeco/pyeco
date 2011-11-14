@@ -161,6 +161,8 @@ class PacketHandle(DataAccessControl):
 					pc.attacking = False
 					pc.attacking_target = None
 					pc.attacking_delay = 0
+					pc.pet = None
+					pc.kanban = ""
 					#reset
 					self.returntype = "changepc"
 					self.returndata = pc

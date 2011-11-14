@@ -29,6 +29,8 @@
 from DataAccessControl import DataAccessControl
 from twisted.internet.protocol import Protocol,ServerFactory
 from twisted.internet import task#,reactor
+from Handle.packethandle import PacketHandle
+from Object.pcobj import PC
 import os
 import socket
 import sys
@@ -169,7 +171,5 @@ class Socket(Protocol, DataAccessControl):
 		#reset
 		pc.sendmapserver = False
 		#save pc data
-		if pc.name != None:
+		if pc.account:
 			pc.saveallconfig("UserDB/%s.ini"%pc.account)
-from Handle.packethandle import PacketHandle
-from Object.pcobj import PC

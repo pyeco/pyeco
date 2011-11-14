@@ -39,14 +39,17 @@ class Event(DataAccessControl):
 		self.add("id", 0)
 		self.add("pclist", {})
 		self.add("moblist", {})
+		self.add("petlist", {})
 		self.add("lock_pclist", None)
 		self.add("lock_moblist", None)
+		self.add("lock_petlist", None)
 		self.add("itemobj", None)
 		self.add("itemdic", {})
 		self.add("mapdic", {})
 		self.add("shopdic", {})
 		self.add("npcdic", {})
 		self.add("mobdic", {})
+		self.add("petdic", {})
 		self.add("pack", None)
 		self.add("send", None)
 		self.add("sendmap", None)
@@ -119,8 +122,8 @@ def warp(pc, mapid, x, y):
 		rawx += 65536
 	if str(rawycache)[:1] == "-":
 		rawy += 65536
-	rawx,rawy = str(rawx), str(rawy)
-	rawx,rawy = rawx.replace(".0",""),rawy.replace(".0","")
+	rawx, rawy = str(rawx), str(rawy)
+	rawx, rawy = rawx.replace(".0","") , rawy.replace(".0","")
 	warpraw(pc, mapid, rawx, rawy, x, y)
 
 def warpraw(pc, mapid, rawx, rawy, x=None, y=None):
@@ -162,11 +165,15 @@ def warpraw(pc, mapid, rawx, rawy, x=None, y=None):
 		datatype,datacontent = pc.e.createpacket.create11f9(pc, 14)
 		#print datatype,datacontent
 		pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
+		unsetpet(pc)
+		setpet(pc)
 	else:
 		#PC消去
 		datatype,datacontent = pc.e.createpacket.create1211(pc)
 		pc.e.sendmapwithoutself(datatype, datacontent, pc.e.pclist, pc, None)
-		#
+		#hide pet
+		unsetpet(pc)
+		#setpet with PacketHandle_Map.do_11fe
 		pc.map = int(mapid)
 		#マップ変更通知
 		datatype,datacontent = pc.e.createpacket.create11fd(pc, mapid, x, y)
@@ -585,7 +592,7 @@ def effect(pc, effect_id=0):
 def speed(pc, speed=410):
 	"""move speed change"""
 	pc.status.speed = int(speed)
-	datatype,datacontent = pc.e.createpacket.create1239(pc, pc.status.speed)
+	datatype, datacontent = pc.e.createpacket.create1239(pc, pc.status.speed)
 	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
 
 def mobmove(mob, x, y, pclist, mapdic, netio, createpacket):
@@ -628,7 +635,7 @@ def mobmove(mob, x, y, pclist, mapdic, netio, createpacket):
 		rawx += 65536
 	if str(rawycache)[:1] == "-":
 		rawy += 65536
-	rawx,rawy = int(rawx),int(rawy)
+	rawx, rawy = int(rawx),int(rawy)
 	mobmoveraw(mob, rawx, rawy, pclist, mapdic, netio,\
 				createpacket, x, y)
 
@@ -668,6 +675,20 @@ def mobmoveraw(mob, rawx, rawy, pclist, mapdic, \
 	netio.sendmap(datatype, datacontent, pclist, mob, None)
 	#will use mob.map
 
+def getexistid(pc):
+	"""get exist id"""
+	existid = []
+	def getsid(pc):
+		return int(pc.sid)
+	with pc.e.lock_pclist and pc.e.lock_moblist and pc.e.lock_petlist:
+		try:
+			existid.extend(map(getsid, pc.e.pclist.itervalues()))
+			existid.extend(pc.e.moblist.keys())
+			existid.extend(pc.e.petlist.keys())
+		except:
+			print "[event]", "getexistid error", traceback.format_exc()
+	return existid
+
 def mob(pc, mobid):
 	"""make mob and announce"""
 	mobid = int(mobid)
@@ -681,6 +702,7 @@ def mob(pc, mobid):
 	newmob = copy.copy(mobfromdic)
 	newmob.id = mobid
 	newmob.sid = 10000
+	newmob.charid = newmob.sid # fake pc
 	newmob.centerx = pc.x
 	newmob.centery = pc.y
 	newmob.x = pc.x
@@ -688,42 +710,84 @@ def mob(pc, mobid):
 	newmob.dir = pc.dir
 	newmob.map = pc.map
 	newmob.damagedic = {} # None -> {}
-	with pc.e.lock_pclist and pc.e.lock_moblist:
-		existid = []
-		for p in pc.e.pclist.itervalues():
-			try:
-				existid.append(int(p.sid))
-			except:
-				print "[event]", "create mob error at append pc sid", traceback.format_exc()
-		existid.extend(pc.e.moblist.keys()) #maybe need map(int, keys)
-		while newmob.sid in existid:
-			newmob.sid += 1
-		newmob.charid = newmob.sid # fake pc
+	existid = getexistid(pc)
+	while newmob.sid in existid:
+		newmob.sid += 1
+	with pc.e.lock_moblist:
 		pc.e.moblist[newmob.sid] = newmob
-		#モンスターID通知
-		datatype,datacontent = pc.e.createpacket.create122a(pc, (newmob.sid,))
-		pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-		#モンスター情報
-		datatype,datacontent = pc.e.createpacket.create1220(pc, newmob)
-		pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
-		#モンスターの状態
-		datatype,datacontent = pc.e.createpacket.create157c(newmob)
-		pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
+	#モンスターID通知
+	datatype,datacontent = pc.e.createpacket.create122a(pc, (newmob.sid,))
+	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
+	#モンスター情報
+	datatype,datacontent = pc.e.createpacket.create1220(pc, newmob)
+	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
+	#モンスターの状態
+	datatype,datacontent = pc.e.createpacket.create157c(newmob)
+	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
 
 def killallmob(pc):
 	"""kill all mob on pc.map"""
 	with pc.e.lock_moblist:
 		removelist = []
-		for sid, mob in pc.e.moblist.items():
+		for sid, mob in pc.e.moblist.iteritems():
 			if int(mob.map) == int(pc.map):
 				removelist.append(sid)
 		for sid in removelist:
 			try:
 				del pc.e.moblist[sid]
 				#モンスター消去
-				datatype,datacontent = pc.e.createpacket.create1225(sid)
+				datatype, datacontent = pc.e.createpacket.create1225(sid)
 				pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
 			except:
 				print "[event]", "killallmob error", traceback.format_exc()
 	systemmessage(pc, "kill %s mob"%(len(removelist), ))
 	print "[event]", "kill", len(removelist), "mob"
+
+def setpet(pc):
+	"""announce pet info"""
+	if not pc.equip.pet:
+		return
+	item = pc.item.get(pc.equip.pet)
+	if not item:
+		print "[event]", "can not found pc.equip.pet %s in item list"%pc.equip.pet
+		return
+	petid = item.petid
+	if not petid or petid not in pc.e.petdic:
+		print "[event]", "pet id %s not exist"%petid
+		return
+	newpet = copy.copy(pc.e.petdic[petid])
+	newpet.master = pc
+	newpet.sid = 20000
+	newpet.charid = newpet.sid
+	newpet.map = pc.map
+	newpet.x = pc.x
+	newpet.y = pc.y
+	newpet.dir = pc.dir
+	existid = getexistid(pc)
+	while newpet.sid in existid:
+		newpet.sid += 1
+	with pc.e.lock_petlist:
+		pc.e.petlist[newpet.sid] = newpet
+	print "[event]", "add pet id %s, sid %s"%(newpet.id, newpet.sid)
+	pc.pet = newpet
+	#create pet with pet info
+	datatype, datacontent = pc.e.createpacket.create122f(pc, newpet)
+	pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
+
+def unsetpet(pc, sendmapwithoutself=False):
+	"""unset pet"""
+	if not pc.pet:
+		return
+	print "[event]", "del pet sid %s"%(pc.pet.sid)
+	#hide pet
+	datatype, datacontent = pc.e.createpacket.create1234(pc.pet)
+	if sendmapwithoutself:
+		pc.e.sendmapwithoutself(datatype, datacontent, pc.e.pclist, pc, None)
+	else:
+		pc.e.sendmap(datatype, datacontent, pc.e.pclist, pc, None)
+	with pc.e.lock_petlist:
+		try:
+			del pc.e.petlist[pc.pet.sid]
+		except:
+			print "[event]", "unsetpet error", traceback.format_exc()
+	pc.pet = None

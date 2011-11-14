@@ -32,14 +32,23 @@
 uselogfile = 0
 enableattackhandle = 0
 #
-print "-----------------------------------------"
-print "|\tpyeco 0.51.3 / 2011-11-13\t|"
-print "-----------------------------------------"
-print "[ all ]", "loading library ...",
-import os
 import sys
+import os
 import time
 import thread
+import threading
+try:
+	# require python >= 2.6
+	sys.dont_write_bytecode = True
+	# equal python -u
+	sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0) 
+	sys.stderr = os.fdopen(sys.stderr.fileno(), "w", 0)
+except:
+	pass
+print "-----------------------------------------"
+print "|\tpyeco 0.51.4 / 2011-11-15\t|"
+print "-----------------------------------------"
+print "[ all ]", "loading library ...",
 from twisted.internet import reactor
 from twisted.python import threadable
 from Object.itemobj import Item
@@ -50,6 +59,7 @@ from Object.skillobj import Skill
 from Object.serverobj import Server
 from Object.pcobj import PC
 from Object.mobobj import Mob
+from Object.petobj import Pet
 from Handle.eventhandle import EventHandle
 from Handle.mobhandle import MobHandle
 from Handle.attackhandle import AttackHandle
@@ -138,6 +148,14 @@ def create_global_mobdic():
 	global_mobdic = global_mobobj.getmobdic(os.getcwd()+"/Database/mob.csv")
 	print "over", "	", len(global_mobdic), "	mob load"
 
+def create_global_petdic():
+	global global_petobj
+	global global_petdic
+	global_petobj = Pet()
+	print "[ all ]","loading pet database ...",
+	global_petdic = global_petobj.getpetdic(os.getcwd()+"/Database/pet.csv")
+	print "over", "	", len(global_petdic), "	pet load"
+
 def create_global_eventhandle():
 	global global_eventhandle
 	global_eventhandle = EventHandle()
@@ -154,22 +172,20 @@ def create_global_attackhandle():
 	global_attackhandle = AttackHandle()
 
 def create_global_lock():
-	from threading import RLock
 	global global_lock_print
 	global global_lock_pclist
 	global global_lock_moblist
-	global_lock_print = RLock()
-	global_lock_pclist = RLock()
-	global_lock_moblist = RLock()
+	global global_lock_petlist
+	global_lock_print = threading.RLock()
+	global_lock_pclist = threading.RLock()
+	global_lock_moblist = threading.RLock()
+	global_lock_petlist = threading.RLock()
 
-def create_global_cryptio():
+def create_global_cryptio_netio():
 	global global_cryptio
 	global_cryptio = CryptIO()
-
-def create_global_netio():
 	global global_netio
-	global_netio = NetIO()
-	global_netio.init(global_cryptio)
+	global_netio = NetIO(global_cryptio, global_lock_pclist)
 
 def create_global_createpacket():
 	global global_createpacket
@@ -196,6 +212,10 @@ def create_pclist():
 def create_moblist():
 	global moblist
 	moblist = {}
+
+def create_petlist():
+	global petlist
+	petlist = {}
 
 def init_attackhandle():
 	global_attackhandle.init(global_serverobj)
@@ -237,6 +257,7 @@ def setlibdic_serverobj():
 	libdic = {"lock_print"	:	global_lock_print,
 			"lock_pclist"	:	global_lock_pclist,
 			"lock_moblist"	:	global_lock_moblist,
+			"lock_petlist"	:	global_lock_petlist,
 			"itemobj"		:	global_itemobj,
 			"itemdic"		:	global_itemdic,
 			"mapdic"		:	global_mapdic,
@@ -246,8 +267,10 @@ def setlibdic_serverobj():
 			"serverobj"	:	global_serverobj, #self
 			"pclist"		:	pclist,
 			"moblist"		:	moblist,
+			"petlist"		:	petlist,
 			"skilldic"	:	global_skilldic,
 			"mobdic"		:	global_mobdic,
+			"petdic"		:	global_petdic,
 			"cryptio"		:	global_cryptio,
 			"netio"		:	global_netio,
 			"createpacket"	:	global_createpacket,
@@ -311,6 +334,7 @@ if __name__ == "__main__":
 		logfile = file("pyeco.log", "a")
 		logfile.write("-"*30+" pyeco start "+"-"*30+"\n")
 	sys.stdout = Log()
+	create_global_lock() #thread lock
 	create_global_serverobj() # a class
 	create_global_itemdic() # key: int item id
 	create_global_mapdic() # key: int map id
@@ -318,16 +342,16 @@ if __name__ == "__main__":
 	create_global_npcdic() # key: int npc id
 	create_global_skilldic() # key: int skill id
 	create_global_mobdic() # key: int mob id
+	create_global_petdic() # key: int pet id
 	create_global_eventhandle() # load script
-	create_global_cryptio()
-	create_global_netio() # need global_netio
+	create_global_cryptio_netio() # create cryptio and netio
 	create_global_createpacket()
 	create_global_commandio()
 	create_global_skillhandle()
 	create_global_attackhandle()
-	create_global_lock() #thread lock
 	create_pclist() # key: str account name
 	create_moblist() # key: int mob server id
+	create_petlist() # key: int pet server id
 	setlibdic_serverobj() # set itemdic, mapdic, etc... in serverobj
 	init_createpacket() # createpacket.init
 	init_skillhandle() # skillhandle.init

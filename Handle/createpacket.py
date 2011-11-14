@@ -169,7 +169,7 @@ class CreatePacket(DataAccessControl):
 		datatype = "0029"
 		datacontent = ""
 		datacontent += "0d"#変わらないらしい----キャラ0
-		cachetype,cache = self.create09e9(pc)
+		cachetype, cache = self.create09e9(pc)
 		cache = cache[10:-36]
 		datacontent += cache
 		datacontent += "0d"#変わらないらしい----キャラ1
@@ -900,7 +900,7 @@ class CreatePacket(DataAccessControl):
 		datacontent += "00"#不明
 		datacontent += "00"#ゲストIDかどうか
 		datacontent += self.pack(pc.lv_base, 2)#レベル（ペットは1固定
-		datacontent += "00000000"#WRP順位（ペットは -1固定。
+		datacontent += self.pack(pc.wrprank, 8)#WRP順位（ペットは -1固定。
 								#別のパケで主人の値が送られてくる
 		datacontent += "00000000"#不明
 		datacontent += "FF"#不明
@@ -1453,4 +1453,36 @@ class CreatePacket(DataAccessControl):
 			else:
 				datacontent += "00000011" #数字の色 #HP回復
 		datacontent += self.pack(skilllv, 2)
+		return datatype, datacontent
+	
+	def create122f(self, pc, pet):
+		"""pet info"""
+		datatype = "122f"
+		datacontent = self.pack(pet.sid, 8) #pet server id
+		datacontent += "03" #unknow
+		datacontent += self.pack(pc.sid, 8) #master server id
+		datacontent += self.pack(pc.charid, 8) #master char id
+		datacontent += self.pack(pc.lv_base, 2) #master lv
+		datacontent += self.pack(pc.wrprank, 8) #master wrprank
+		datacontent += "00" #unknow
+		datacontent += self.pack(pet.x, 2) #pet x
+		datacontent += self.pack(pet.y, 2) #pet y
+		datacontent += self.pack(pet.speed, 4) #pet speed
+		datacontent += self.pack(pet.dir, 2) #pet dir
+		datacontent += self.pack(pet.hp, 8) #pet hp
+		datacontent += self.pack(pet.maxhp, 8) #pet maxhp
+		return datatype, datacontent
+
+	def create1234(self, pet):
+		"""hide pet"""
+		datatype = "1234"
+		datacontent = self.pack(pet.sid, 8) #pet server id
+		datacontent += "00" #unknow
+		return datatype, datacontent
+	
+	def create041b(self, pc):
+		"""kanban"""
+		datatype = "041b"
+		datacontent = self.pack(pc.sid, 8)
+		datacontent += self.packstr(pc.kanban)
 		return datatype, datacontent
