@@ -2,6 +2,11 @@ old wiki: https://code.google.com/p/pyeco/w/list
 extra: https://github.com/pyeco/pyeco_extra
 license: BSD
 
+0.51.4
+pet view and move
+fix save null pc to ".ini" issue
+kanban
+
 0.51.3
 type safe in almost class
 fix a problem cause load script error on linux
