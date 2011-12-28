@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import os
 import sys
 import time
@@ -35,12 +34,12 @@ import random
 from Object.eventobj import *
 import traceback
 
-class MobHandle(DataAccessControl):
+class MobHandle:
 	def __init__(self, serverobj):
 		"""__init__"""
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.add("except_count", 0)
+		self.except_count = 0
 	
 	def get_new_point(self, mob, tox=None, toy=None, minx=-1, maxx=1, miny=-1, maxy=1):
 		"""get new point"""

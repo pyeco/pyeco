@@ -26,10 +26,9 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import csv
 
-class Map(DataAccessControl):
+class Map:
 	def getmapdic(self, filename):
 		mapdic={}
 		reader = csv.reader(file(filename, "rb"))
@@ -54,6 +53,6 @@ class Map(DataAccessControl):
 		return mapdic
 
 	def __init__(self):
-		self.add("name", "")
-		self.add("centerx", 0)
-		self.add("centery", 0)
+		self.name = ""
+		self.centerx = 0
+		self.centery = 0

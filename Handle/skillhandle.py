@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import sys
 import os
 import time
@@ -34,25 +33,25 @@ import thread
 from Object import eventobj
 import traceback
 
-class SkillHandle(DataAccessControl):
+class SkillHandle:
 	def __init__(self):
-		self.add("dolist", list(set(map(self.rm, dir(self)))))
+		self.dolist = list(set(map(self.rm, dir(self))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.add("sysenc", sys.getfilesystemencoding())
+		self.sysenc = sys.getfilesystemencoding()
 	
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.add("except_count", 0)
-		self.add("send", self.netio.send)
-		self.add("sendmap", self.netio.sendmap)
-		self.add("sendmapwithoutself", self.netio.sendmapwithoutself)
-		self.add("sendserver", self.netio.sendserver)
+		self.except_count = 0
+		self.send = self.netio.send
+		self.sendmap = self.netio.sendmap
+		self.sendmapwithoutself = self.netio.sendmapwithoutself
+		self.sendserver = self.netio.sendserver
 		#self.oldtime = time.time()
 	
 	def rm(self, s):

@@ -10,6 +10,6 @@ class Script:
 	def main(self, pc):
 		pass#do nothing
 		systemmessage(pc, "---------------------------------------")
-		systemmessage(pc, "pyeco 0.51.4 / 2011-11-15")
+		systemmessage(pc, "pyeco 0.52 / 2011-12-28")
 		systemmessage(pc, "./Script/system/s00000030_loginevent.py")
 		systemmessage(pc, "---------------------------------------")

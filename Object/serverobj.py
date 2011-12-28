@@ -26,40 +26,32 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import ConfigParser
 import os
 import io
 import StringIO
 
-class Server(DataAccessControl):
+class Server:
 	def __init__(self):
-		self.add("loginserverport", 0)
-		self.add("mapserverport", 0)
-		self.add("webserverport", 0)
-		self.add("serveraddress", "")
-		self.add("defaultgmlevel", 0)
-		self.add("gmlevel", {})
-		self.add("loginevent", 0) #event id
-		self.add("clientlistcount", 0)
-		self.add("clientlist", {})
-		self.add("packethandle", {})
-		self.add("clientlistcount_map", 0)
-		self.add("clientlist_map", {})
-		self.add("packethandle_map", {})
-		self.add("enableattackhandle", False)
-		self.add("cfg", None) #ConfigParser.SafeConfigParser()
-		self.add("readhandle", None) #open(path, "rb")
-		self.add("writehandle", None) #open(path, "wb")
+		self.loginserverport = 0
+		self.mapserverport = 0
+		self.webserverport = 0
+		self.serveraddress = ""
+		self.defaultgmlevel = 0
+		self.gmlevel = {}
+		self.loginevent = 0
+		self.clientlistcount = 0
+		self.clientlist = {}
+		self.packethandle = {}
+		self.clientlistcount_map = 0
+		self.clientlist_map = {}
+		self.packethandle_map = {}
+		self.enableattackhandle = False
+		self.cfg = None #ConfigParser.SafeConfigParser()
+		self.readhandle = None #open(path, "rb")
+		self.writehandle = None #open(path, "wb")
 	
 	def setlibdic(self, libdic, selfx=None):
-		if not selfx:
-			selfx = self
-		selfx.add("libdic", libdic)
-		for name, value in selfx.libdic.iteritems():
-			selfx.add(name, value)
-	
-	def setlibdic_NoDataAccessControl(self, libdic, selfx=None):
 		if not selfx:
 			selfx = self
 		selfx.libdic = libdic

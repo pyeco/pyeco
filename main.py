@@ -38,15 +38,15 @@ import time
 import thread
 import threading
 try:
+	# equal python -u
+	sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
+	sys.stderr = os.fdopen(sys.stderr.fileno(), "w", 0)
 	# require python >= 2.6
 	sys.dont_write_bytecode = True
-	# equal python -u
-	sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0) 
-	sys.stderr = os.fdopen(sys.stderr.fileno(), "w", 0)
 except:
 	pass
 print "-----------------------------------------"
-print "|\tpyeco 0.51.4 / 2011-11-15\t|"
+print "|\tpyeco 0.52 / 2011-12-28\t\t|"
 print "-----------------------------------------"
 print "[ all ]", "loading library ...",
 from twisted.internet import reactor

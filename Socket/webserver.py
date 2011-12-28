@@ -285,7 +285,7 @@ class HTTPHandle(SimpleHTTPServer.SimpleHTTPRequestHandler):
 class WebServer:
 	def listen_thread(self, serverobj):
 		webserverport = int(serverobj.webserverport)
-		serverobj.setlibdic_NoDataAccessControl(serverobj.libdic, HTTPHandle)
+		serverobj.setlibdic(serverobj.libdic, HTTPHandle)
 		server = BaseHTTPServer.HTTPServer(("0.0.0.0",webserverport), HTTPHandle)
 		server.serve_forever()
 	def create_listen_thread(self, serverobj):

@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
@@ -47,19 +46,19 @@ PACKET_NOT_PRINT = ["0032", #ping
 				"0f9f", #attack
 				]
 
-class PacketHandle_Map(DataAccessControl):
+class PacketHandle_Map():
 	def __init__(self):
-		self.add("dolist", list(set(map(self.rm, dir(self)))))
+		self.dolist = list(set(map(self.rm, dir(self))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.add("sysenc", sys.getfilesystemencoding())
-		self.add("returntype", None)
-		self.add("returndata", None)
-	
+		self.sysenc = sys.getfilesystemencoding()
+		self.returntype = None
+		self.returndata = None
+
 	def rm(self, s):
 		if s[:3] == "do_":
 			return s[3:]
@@ -78,14 +77,14 @@ class PacketHandle_Map(DataAccessControl):
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.add("encode", self.cryptio.encode)
-		self.add("decode", self.cryptio.decode)
-		self.add("pack", self.netio.pack)
-		self.add("send", self.netio.send)
-		self.add("sendmap", self.netio.sendmap)
-		self.add("sendmapwithoutself", self.netio.sendmapwithoutself)
-		self.add("sendserver", self.netio.sendserver)
-		self.add("event", eventobj.Event())
+		self.encode = self.cryptio.encode
+		self.decode = self.cryptio.decode
+		self.pack = self.netio.pack
+		self.send = self.netio.send
+		self.sendmap = self.netio.sendmap
+		self.sendmapwithoutself = self.netio.sendmapwithoutself
+		self.sendserver = self.netio.sendserver
+		self.event = eventobj.Event()
 		self.event.id = 00000000
 		self.event.pclist = self.pclist
 		self.event.moblist = self.moblist

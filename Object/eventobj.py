@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 from mobobj import Mob
 import sys
 import os
@@ -34,31 +33,31 @@ import copy
 import time
 import traceback
 
-class Event(DataAccessControl):
+class Event:
 	def __init__(self):
-		self.add("id", 0)
-		self.add("pclist", {})
-		self.add("moblist", {})
-		self.add("petlist", {})
-		self.add("lock_pclist", None)
-		self.add("lock_moblist", None)
-		self.add("lock_petlist", None)
-		self.add("itemobj", None)
-		self.add("itemdic", {})
-		self.add("mapdic", {})
-		self.add("shopdic", {})
-		self.add("npcdic", {})
-		self.add("mobdic", {})
-		self.add("petdic", {})
-		self.add("pack", None)
-		self.add("send", None)
-		self.add("sendmap", None)
-		self.add("sendmapwithoutself", None)
-		self.add("sendserver", None)
-		self.add("netio", None)
-		self.add("createpacket", None)
-		self.add("serverobj", None)
-		self.add("eventhandle", None)
+		self.id = 0
+		self.pclist = {}
+		self.moblist = {}
+		self.petlist = {}
+		self.lock_pclist = None
+		self.lock_moblist = None
+		self.lock_petlist = None
+		self.itemobj = None
+		self.itemdic = {}
+		self.mapdic = {}
+		self.shopdic = {}
+		self.npcdic = {}
+		self.mobdic = {}
+		self.petdic = {}
+		self.pack = None
+		self.send = None
+		self.sendmap = None
+		self.sendmapwithoutself = None
+		self.sendserver = None
+		self.netio = None
+		self.createpacket = None
+		self.serverobj = None
+		self.eventhandle = None
 
 def say(pc, text, npc_name="", motion_id=131, npcid=None):
 	"""npc say"""

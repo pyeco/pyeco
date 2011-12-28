@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 
 ACCESORY_TYPE_LIST = ["ACCESORY_NECK",
 				"JOINT_SYMBOL",
@@ -77,11 +76,11 @@ PET_TYPE_LIST = ["BACK_DEMON",
 				"RIDE_PET",
 				"PET_NEKOMATA",
 				]
-class CreatePacket(DataAccessControl):
+class CreatePacket:
 	def init(self, serverobj):
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.add("pack", self.netio.pack)
-		self.add("packstr", self.netio.packstr)
+		self.pack = self.netio.pack
+		self.packstr = self.netio.packstr
 	
 	def create0002(self, clientver):
 		"""認証接続確認(s0001)の応答"""

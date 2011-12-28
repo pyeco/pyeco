@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import sys
 import os
 import time
@@ -34,10 +33,10 @@ import thread
 from Object.eventobj import *
 import traceback
 
-class EventHandle(DataAccessControl):
+class EventHandle:
 	def __init__(self):
-		self.add("scriptdic", {})
-		self.add("removelist", [])
+		self.scriptdic = {}
+		self.removelist = []
 	
 	def loadscript(self, scriptpath):
 		scriptfilelist = []

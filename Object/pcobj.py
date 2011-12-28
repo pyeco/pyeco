@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 from Object import eventobj
 import ConfigParser
 import sys
@@ -94,17 +93,17 @@ CALL_UPDATEPC_WHEN_CHANGE = ["name",
 						#"motion",
 						"lv_base"]
 
-class PC(DataAccessControl):
+class PC:
 	def __init__(self, global_itemobj, global_itemdic):
 		self.pcinit()
-		self.add("cfg", None) #ConfigParser.SafeConfigParser()
-		self.add("readhandle", None) #open(path, "rb")
-		self.add("writehandle", None) #open(path, "wb")
-		self.add("itemobj", global_itemobj)
-		self.add("itemdic", global_itemdic)
+		self.cfg = None #ConfigParser.SafeConfigParser()
+		self.readhandle = None #open(path, "rb")
+		self.writehandle = None #open(path, "wb")
+		self.itemobj = global_itemobj
+		self.itemdic = global_itemdic
 	
 	def __setattr__(self, name, value):
-		DataAccessControl.__setattr__(self, name, value)
+		self.__dict__[name] = value
 		if name in CALL_UPDATEPC_WHEN_CHANGE and self.online and self.e:
 			#print "eventobj.updatepc(self)", name
 			eventobj.updatepc(self)
@@ -606,161 +605,161 @@ class PC(DataAccessControl):
 		return newpc
 	
 	def pcinit(self):
-		self.add("client", None) #None -> any type
-		self.add("mapclient", None)
-		self.add("account", "")
-		self.add("charid", 0)
-		self.add("sid", 0) #server id
+		self.client = None #None -> any type
+		self.mapclient = None
+		self.account = ""
+		self.charid = 0
+		self.sid = 0 #server id
 		
-		self.add("online", False) # online on mapserver
-		self.add("online_login", False) #online on loginserver
-		self.add("visible", False)
-		self.add("loginevent", False)
-		self.add("attacking", False)
-		self.add("attacking_target", None)
-		self.add("attacking_delay", 0)
-		self.add("wait_for_delete", False)
+		self.online = False # online on mapserver
+		self.online_login = False #online on loginserver
+		self.visible = False
+		self.loginevent = False
+		self.attacking = False
+		self.attacking_target = None
+		self.attacking_delay = 0
+		self.wait_for_delete = False
 		
-		self.add("selectresult", None) #int or None
-		self.add("motion", 111)
-		self.add("effect", None)
-		self.add("tradestate", 0)
-		self.add("tradelist", [])
-		self.add("tradereturnlist", [])
-		self.add("isnpctrade", False)
-		self.add("warehouse_open", None) #int or None
-		self.add("e", None)
+		self.selectresult = None #int or None
+		self.motion = 111
+		self.effect = None
+		self.tradestate = 0
+		self.tradelist = []
+		self.tradereturnlist = []
+		self.isnpctrade = False
+		self.warehouse_open = None #int or None
+		self.e = None
 		
-		self.add("name", "")
-		self.add("password", "")
-		self.add("delpassword", "")
-		self.add("gmlevel", 0)
-		self.add("race", 0)
-		self.add("form", 0)
-		self.add("gender", 0)
-		self.add("hair", 0)
-		self.add("haircolor", 0)
-		self.add("wig", 0)
-		self.add("face", 0)
-		self.add("base_lv", 0)
-		self.add("ex", 0)
-		self.add("wing", 0)
-		self.add("wingcolor", 0)
-		self.add("job", 0)
-		self.add("map", 0)
-		self.add("lv_base", 0)
-		self.add("lv_job1", 0)
-		self.add("lv_job2t", 0)
-		self.add("lv_job2x", 0)
-		self.add("lv_job3", 0)
-		self.add("gold", 0)
+		self.name = ""
+		self.password = ""
+		self.delpassword = ""
+		self.gmlevel = 0
+		self.race = 0
+		self.form = 0
+		self.gender = 0
+		self.hair = 0
+		self.haircolor = 0
+		self.wig = 0
+		self.face = 0
+		self.base_lv = 0
+		self.ex = 0
+		self.wing = 0
+		self.wingcolor = 0
+		self.job = 0
+		self.map = 0
+		self.lv_base = 0
+		self.lv_job1 = 0
+		self.lv_job2t = 0
+		self.lv_job2x = 0
+		self.lv_job3 = 0
+		self.gold = 0
 		
-		self.add("str", 0)
-		self.add("dex", 0)
-		self.add("int", 0)
-		self.add("vit", 0)
-		self.add("agi", 0)
-		self.add("mag", 0)
-		self.add("stradd", 0)
-		self.add("dexadd", 0)
-		self.add("intadd", 0)
-		self.add("vitadd", 0)
-		self.add("agiadd", 0)
-		self.add("magadd", 0)
+		self.str = 0
+		self.dex = 0
+		self.int = 0
+		self.vit = 0
+		self.agi = 0
+		self.mag = 0
+		self.stradd = 0
+		self.dexadd = 0
+		self.intadd = 0
+		self.vitadd = 0
+		self.agiadd = 0
+		self.magadd = 0
 		
-		self.add("x", 0)
-		self.add("y", 0)
-		self.add("dir", 0)
-		self.add("rawx", 0)
-		self.add("rawy", 0)
-		self.add("rawdir", 0)
+		self.x = 0
+		self.y = 0
+		self.dir = 0
+		self.rawx = 0
+		self.rawy = 0
+		self.rawdir = 0
 		
-		self.add("skill_list", [])
-		self.add("item", {})
-		self.add("warehouse", {})
-		self.add("dic", {})
-		self.add("battlestatus", 0)
-		self.add("wrprank", 0)
+		self.skill_list = []
+		self.item = {}
+		self.warehouse = {}
+		self.dic = {}
+		self.battlestatus = 0
+		self.wrprank = 0
 		
-		self.add("pet", None) #Pet()
-		self.add("kanban", "")
+		self.pet = None #Pet()
+		self.kanban = ""
 		
-		self.add("logout", False)
-		self.add("sendmapserver", False)
+		self.logout = False
+		self.sendmapserver = False
 		
-		self.add("sort", self.SortClass())
-		self.add("equip", self.EquipClass())
-		self.add("status", self.StatusClass())
+		self.sort = self.SortClass()
+		self.equip = self.EquipClass()
+		self.status = self.StatusClass()
 
-	class SortClass(DataAccessControl):
+	class SortClass:
 		def __init__(self):
-			self.add("item", [])
-			self.add("warehouse", [])
-	class EquipClass(DataAccessControl):
+			self.item = []
+			self.warehouse = []
+	class EquipClass:
 		def __init__(self):
-			self.add("head", 0)
-			self.add("face", 0)
-			self.add("chestacce", 0)
-			self.add("tops", 0)
-			self.add("bottoms", 0)
-			self.add("backpack", 0)
-			self.add("right", 0)
-			self.add("left", 0)
-			self.add("shoes", 0)
-			self.add("socks", 0)
-			self.add("pet", 0)
-	class StatusClass(DataAccessControl):
+			self.head = 0
+			self.face = 0
+			self.chestacce = 0
+			self.tops = 0
+			self.bottoms = 0
+			self.backpack = 0
+			self.right = 0
+			self.left = 0
+			self.shoes = 0
+			self.socks = 0
+			self.pet = 0
+	class StatusClass:
 		def __init__(self):
-			self.add("maxhp", 100)
-			self.add("maxmp", 40)
-			self.add("maxsp", 50)
-			self.add("maxep", 30)
-			self.add("hp", 100)
-			self.add("mp", 40)
-			self.add("sp", 50)
-			self.add("ep", 30)
+			self.maxhp = 100
+			self.maxmp = 40
+			self.maxsp = 50
+			self.maxep = 30
+			self.hp = 100
+			self.mp = 40
+			self.sp = 50
+			self.ep = 30
 			
-			self.add("minatk1", 100)
-			self.add("minatk2", 100)
-			self.add("minatk3", 100)
-			self.add("maxatk1", 100)
-			self.add("maxatk2", 100)
-			self.add("maxatk3", 100)
-			self.add("minmatk", 100)
-			self.add("maxmatk", 100)
+			self.minatk1 = 100
+			self.minatk2 = 100
+			self.minatk3 = 100
+			self.maxatk1 = 100
+			self.maxatk2 = 100
+			self.maxatk3 = 100
+			self.minmatk = 100
+			self.maxmatk = 100
 			
-			self.add("leftdef", 50)
-			self.add("rightdef", 30)
-			self.add("leftmdef", 30)
-			self.add("rightmdef", 20)
-			self.add("shit", 7)
-			self.add("lhit", 0)
-			self.add("mhit", 7)
-			self.add("chit", 0)
-			self.add("savoid", 0)
-			self.add("lavoid", 12)
+			self.leftdef = 50
+			self.rightdef = 30
+			self.leftmdef = 30
+			self.rightmdef = 20
+			self.shit = 7
+			self.lhit = 0
+			self.mhit = 7
+			self.chit = 0
+			self.savoid = 0
+			self.lavoid = 12
 			
-			self.add("hpheal", 0)
-			self.add("mpheal", 0)
-			self.add("spheal", 0)
-			self.add("aspd", 750) #190
-			self.add("cspd", 187)
-			self.add("speed", 410)
-			self.add("adelay", 2*(1-self.aspd/1000.0)) #attack delay
+			self.hpheal = 0
+			self.mpheal = 0
+			self.spheal = 0
+			self.aspd = 750 #190
+			self.cspd = 187
+			self.speed = 410
+			self.adelay = 2*(1-self.aspd/1000.0) #attack delay
 			
-			self.add("maxcapa", 1000)
-			self.add("maxrightcapa", 0)
-			self.add("maxleftcapa", 0)
-			self.add("maxbackcapa", 0)
-			self.add("maxpayl", 1000)
-			self.add("maxrightpayl", 0)
-			self.add("maxleftpayl", 0)
-			self.add("maxbackpayl", 0)
-			self.add("capa", 30)
-			self.add("rightcapa", 0)
-			self.add("leftcapa", 0)
-			self.add("backcapa", 0)
-			self.add("payl", 30)
-			self.add("rightpayl", 0)
-			self.add("leftpayl", 0)
-			self.add("backpayl", 0)
+			self.maxcapa = 1000
+			self.maxrightcapa = 0
+			self.maxleftcapa = 0
+			self.maxbackcapa = 0
+			self.maxpayl = 1000
+			self.maxrightpayl = 0
+			self.maxleftpayl = 0
+			self.maxbackpayl = 0
+			self.capa = 30
+			self.rightcapa = 0
+			self.leftcapa = 0
+			self.backcapa = 0
+			self.payl = 30
+			self.rightpayl = 0
+			self.leftpayl = 0
+			self.backpayl = 0

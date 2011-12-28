@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
@@ -34,12 +33,12 @@ import rijndael
 from cryptio import CryptIO
 import traceback
 
-class NetIO(DataAccessControl):
+class NetIO:
 	def __init__(self, cryptio, lock_pclist):
-		self.add("cryptio", cryptio)
-		self.add("encode", self.cryptio.encode)
-		self.add("decode", self.cryptio.decode)
-		self.add("lock_pclist", lock_pclist)
+		self.cryptio = cryptio
+		self.encode = self.cryptio.encode
+		self.decode = self.cryptio.decode
+		self.lock_pclist = lock_pclist
 	
 	def calc_data_head(self, datatype, datacontent):
 		try:

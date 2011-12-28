@@ -2,6 +2,10 @@ old wiki: https://code.google.com/p/pyeco/w/list
 extra: https://github.com/pyeco/pyeco_extra
 license: BSD
 
+0.52
+upgrade to v325
+remove dataaccesscontrol/type safe (expend too many memory)
+
 0.51.4
 pet view and move
 fix save null pc to ".ini" issue
@@ -26,4 +30,3 @@ fix a problem cause can not see other character
 0.51.1
 upgrade to v319
 command !face face_id
-

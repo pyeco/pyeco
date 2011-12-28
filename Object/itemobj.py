@@ -26,11 +26,10 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import csv
 import copy
 
-class Item(DataAccessControl):
+class Item:
 	def getitemdic(self, filename):
 		itemdic = {}
 		reader = csv.reader(file(filename, "rb"))
@@ -39,14 +38,14 @@ class Item(DataAccessControl):
 				return 0
 			else:
 				return int(i)
-		for row in reader:
+		for i, row in enumerate(reader):
 			lenrow = len(row)
 			if lenrow < 10:
 				continue
 			if row[0][0:1] == "#":
 				continue
 			if lenrow < 85:
-				print "[ all ]", "item load error in Object.itemobj / len(row) < 85", row
+				print "[ all ]", "getitemdic Error: len(row) < 85, line:%s" % (i+1)
 				continue
 			try:
 				itemid = int(row[0])
@@ -121,60 +120,60 @@ class Item(DataAccessControl):
 		return itemobj
 	
 	def __init__(self):
-		self.add("id", 0)
-		self.add("eventid", 0)
-		self.add("count", 0)
-		self.add("warehouse", 0)
-		self.add("pictid", 0)
-		self.add("name", "")
-		self.add("type", "")
-		self.add("price", 0)
-		self.add("weight", 0)
-		self.add("capa", 0)
-		self.add("stock", 0)
-		self.add("durability_max", 0)
-		self.add("hp", 0)
-		self.add("mp", 0)
-		self.add("sp", 0)
-		self.add("speed", 0)
-		self.add("str", 0)
-		self.add("mag", 0)
-		self.add("vit", 0)
-		self.add("dex", 0)
-		self.add("agi", 0)
-		self.add("int", 0)
-		self.add("luk", 0)
-		self.add("cha", 0)
-		self.add("atk1", 0)
-		self.add("atk2", 0)
-		self.add("atk3", 0)
-		self.add("matk", 0)
-		self.add("DEF", 0)
-		self.add("mdef", 0)
-		self.add("s_hit", 0)
-		self.add("l_hit", 0)
-		self.add("magic_hit", 0)
-		self.add("s_avoid", 0)
-		self.add("l_avoid", 0)
-		self.add("magic_avoid", 0)
-		self.add("critical_hit", 0)
-		self.add("critical_avoid", 0)
-		self.add("heal_hp", 0)
-		self.add("heal_mp", 0)
-		self.add("energy", 0)
-		self.add("fire", 0)
-		self.add("water", 0)
-		self.add("wind", 0)
-		self.add("earth", 0)
-		self.add("light", 0)
-		self.add("dark", 0)
-		self.add("poison", 0)
-		self.add("stone", 0)
-		self.add("paralyze", 0)
-		self.add("sleep", 0)
-		self.add("silence", 0)
-		self.add("slow", 0)
-		self.add("confuse", 0)
-		self.add("freeze", 0)
-		self.add("stan", 0)
-		self.add("petid", 0)
+		self.id = 0
+		self.eventid = 0
+		self.count = 0
+		self.warehouse = 0
+		self.pictid = 0
+		self.name = ""
+		self.type = ""
+		self.price = 0
+		self.weight = 0
+		self.capa = 0
+		self.stock = 0
+		self.durability_max = 0
+		self.hp = 0
+		self.mp = 0
+		self.sp = 0
+		self.speed = 0
+		self.str = 0
+		self.mag = 0
+		self.vit = 0
+		self.dex = 0
+		self.agi = 0
+		self.int = 0
+		self.luk = 0
+		self.cha = 0
+		self.atk1 = 0
+		self.atk2 = 0
+		self.atk3 = 0
+		self.matk = 0
+		self.DEF = 0
+		self.mdef = 0
+		self.s_hit = 0
+		self.l_hit = 0
+		self.magic_hit = 0
+		self.s_avoid = 0
+		self.l_avoid = 0
+		self.magic_avoid = 0
+		self.critical_hit = 0
+		self.critical_avoid = 0
+		self.heal_hp = 0
+		self.heal_mp = 0
+		self.energy = 0
+		self.fire = 0
+		self.water = 0
+		self.wind = 0
+		self.earth = 0
+		self.light = 0
+		self.dark = 0
+		self.poison = 0
+		self.stone = 0
+		self.paralyze = 0
+		self.sleep = 0
+		self.silence = 0
+		self.slow = 0
+		self.confuse = 0
+		self.freeze = 0
+		self.stan = 0
+		self.petid = 0

@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from DataAccessControl import DataAccessControl
 from twisted.internet.protocol import Protocol,ServerFactory
 from twisted.internet import task#,reactor
 from Handle.packethandle import PacketHandle
@@ -35,9 +34,6 @@ import os
 import socket
 import sys
 import rijndael
-DIRECT_WRITE_NAME = ["connected",
-				"transport",
-				]
 
 class Factory(ServerFactory):
 	def __init__(self, serverobj):
@@ -48,34 +44,28 @@ class Factory(ServerFactory):
 		print "[login]", "new client accepted"
 		return Socket(self.serverobj)
 
-class Socket(Protocol, DataAccessControl):
+class Socket(Protocol):
 	def __init__(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.add("packethandle", {})
-		self.add("waitmapserverrequest", False)
+		self.packethandle = {}
+		self.waitmapserverrequest = False
 		self.serverobj.clientlistcount += 1
-		self.add("clientindex", int(self.serverobj.clientlistcount))
+		self.clientindex = int(self.serverobj.clientlistcount)
 		self.serverobj.clientlist[self.clientindex] = PC(self.itemobj, self.itemdic)
 		self.serverobj.clientlist[self.clientindex].name = ""
 		self.serverobj.clientlist[self.clientindex].client = self
 		self.serverobj.packethandle[self.clientindex] = PacketHandle()
 		self.serverobj.packethandle[self.clientindex].init(self.serverobj)
 		self.serverobj.packethandle[self.clientindex].setpclist(self.pclist)
-		self.add("pc", self.serverobj.clientlist[self.clientindex])
-		self.add("buffer", "")
-		self.add("ecoinit", False)
-		self.add("ecorecvkey", False)
-		self.add("encode", self.cryptio.encode)
-		self.add("decode", self.cryptio.decode)
-		self.add("count_s00a8", 0)
-		self.add("timer_s00a8", None)
-	
-	def __setattr__(self, name, value):
-		if name in DIRECT_WRITE_NAME:
-			self.__dict__[name] = value
-		else:
-			DataAccessControl.__setattr__(self, name, value)
+		self.pc = self.serverobj.clientlist[self.clientindex]
+		self.buffer = ""
+		self.ecoinit = False
+		self.ecorecvkey = False
+		self.encode = self.cryptio.encode
+		self.decode = self.cryptio.decode
+		self.count_s00a8 = 0
+		self.timer_s00a8 = None
 	
 	def dataReceived(self, data):
 		self.buffer += data.encode("hex")

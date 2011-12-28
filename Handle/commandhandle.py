@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 from Object import eventobj
 import sys
 import os
@@ -79,21 +78,21 @@ def simplehandle(pc, openchattext, commandstr, commandhint=None, errormessage=No
 		except Exception:
 			arg = None
 	return arg
-	
-	
-	
-	
-	
-class Command(DataAccessControl):
+
+
+
+
+
+class Command:
 	def __init__(self):
-		self.add("dolist", list(set(map(self.rm, dir(self)))))
+		self.dolist = list(set(map(self.rm, dir(self))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.add("sysenc", sys.getfilesystemencoding())
+		self.sysenc = sys.getfilesystemencoding()
 	
 	def rm(self, s):
 		if s[:3] == "do_":

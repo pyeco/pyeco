@@ -26,7 +26,6 @@
 #       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from Socket.DataAccessControl import DataAccessControl
 import os
 import socket
 import sys
@@ -35,17 +34,17 @@ import Socket.rijndael
 from Object.itemobj import Item
 import traceback
 
-class PacketHandle(DataAccessControl):
+class PacketHandle:
 	def __init__(self):
-		self.add("dolist", list(set(map(self.rm, dir(self)))))
+		self.dolist = list(set(map(self.rm, dir(self))))
 		#dir self to list function ->
 		#remove not start from "do_" ->
 		#remove duplicate ->
 		#transform type "set" to "list"
 		self.dolist.remove("")
 		#print self.dolist
-		self.add("returntype", None)
-		self.add("returndata", None)
+		self.returntype = None
+		self.returndata = None
 	
 	def rm(self, s):
 		if s[:3] == "do_":
@@ -65,11 +64,11 @@ class PacketHandle(DataAccessControl):
 	def init(self, serverobj):
 		# set itemdic, mapdic, etc...
 		serverobj.setlibdic(serverobj.libdic, self)
-		self.add("encode", self.cryptio.encode)
-		self.add("decode", self.cryptio.decode)
-		self.add("pack", self.netio.pack)
-		self.add("send", self.netio.send)
-		self.add("passtype", [])
+		self.encode = self.cryptio.encode
+		self.decode = self.cryptio.decode
+		self.pack = self.netio.pack
+		self.send = self.netio.send
+		self.passtype = []
 		self.passtype.append("000a")#ping
 	
 	def setpclist(self, pclist):
